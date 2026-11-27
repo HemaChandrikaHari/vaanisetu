@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { registerPlugin } from "@capacitor/core";
+import AuthGate from "./AuthGate.jsx";
 
 const CallRedirection = registerPlugin("CallRedirection");
 
 const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const MAX_RECORDING_SECONDS = 25;
 
-export default function App() {
+function AppContent() {
   const [apiBase, setApiBase] = useState(() => localStorage.getItem("vaanisetu_api_base") || DEFAULT_API_BASE);
   const [apiBaseDraft, setApiBaseDraft] = useState(() => localStorage.getItem("vaanisetu_api_base") || DEFAULT_API_BASE);
   const [backend, setBackend] = useState(null);
@@ -358,4 +359,9 @@ export default function App() {
       <footer><span>VaaniSetu · Android-ready prototype</span><span>22 languages for recognition and translation · 11 for generated voice</span></footer>
     </main>
   );
+}
+
+
+export default function App() {
+  return <AuthGate><AppContent /></AuthGate>;
 }
