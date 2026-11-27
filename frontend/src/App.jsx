@@ -24,9 +24,6 @@ export default function App() {
   const [translatedAudioUrl, setTranslatedAudioUrl] = useState("");
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [activeTab, setActiveTab] = useState("translate");
-  const [callerNumber, setCallerNumber] = useState("");
-  const [recipientNumber, setRecipientNumber] = useState("");
-  const [callConsent, setCallConsent] = useState(false);
   const [callStatus, setCallStatus] = useState(null);
   const [androidCallStatus, setAndroidCallStatus] = useState(null);
   const [androidCallBusy, setAndroidCallBusy] = useState(false);
@@ -304,7 +301,7 @@ export default function App() {
       </section> : <section className="hero call-hero">
         <p className="eyebrow">ONE APP. TWO LANGUAGES. NO APP NEEDED FOR THE OTHER PERSON.</p>
         <h1>Make every<br /><span>conversation closer.</span></h1>
-        <p className="intro">Start a translated phone call from VaaniSetu. The person you call answers their regular phone — they do not need to install this app.</p>
+        <p className="intro">VaaniSetu is being built to work alongside your existing Android Phone app. The other person will answer a normal phone call and will not need to install VaaniSetu.</p>
         <section className="recorder-card call-card">
           <div className="recorder-heading"><div><span className="field-label">TRANSLATED PHONE CALL</span><h2>Set up your call</h2></div><span className="mode-label">ANDROID INTEGRATION</span></div>
           {window.Capacitor?.isNativePlatform?.() && <section className="android-integration-panel">
@@ -316,7 +313,7 @@ export default function App() {
             </select>
             <label className="select-label" htmlFor="call-target-language">They speak</label>
             <select id="call-target-language" value={targetLanguageCode} onChange={(event) => setTargetLanguageCode(event.target.value)} disabled={androidCallBusy}>
-              {languages.map((language) => <option key={language.code} value={language.code}>{language.name}</option>)}
+              {ttsLanguages.map((language) => <option key={language.code} value={language.code}>{language.name}</option>)}
             </select>
             <button type="button" className="swap-button" onClick={saveAndroidCallLanguages} disabled={androidCallBusy || languageCode === targetLanguageCode}>Save call languages</button>
             <div className="call-status-panel">
@@ -330,18 +327,11 @@ export default function App() {
             </button>
             <p className="call-footnote">Safety: normal calls still go through unchanged. Automatic translation routing stays off until Exotel confirms the gateway and two-way audio protocol.</p>
           </section>}
-          <label className="select-label" htmlFor="caller-number">Your phone number</label>
-          <input id="caller-number" className="phone-input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+91 98765 43210" value={callerNumber} onChange={(event) => setCallerNumber(event.target.value)} />
-          <label className="select-label" htmlFor="recipient-number">Person you want to call</label>
-          <input id="recipient-number" className="phone-input" type="tel" inputMode="tel" placeholder="+91 98765 43210" value={recipientNumber} onChange={(event) => setRecipientNumber(event.target.value)} />
-          <div className="call-direction"><div><span className="field-label">YOU SPEAK</span><strong>{languages.find((item) => item.code === languageCode)?.name || "Telugu"}</strong></div><span className="direction-arrow">⇄</span><div><span className="field-label">THEY HEAR</span><strong>{ttsLanguages.find((item) => item.code === targetLanguageCode)?.name || "Hindi"}</strong></div></div>
-          <button type="button" className="swap-button call-swap" onClick={swapLanguages} disabled={!canSwapLanguages}>↕ Reverse call languages</button>
-          <label className="call-consent"><input type="checkbox" checked={callConsent} onChange={(event) => setCallConsent(event.target.checked)} /><span>I will tell the other person this call is translated and obtain their consent before translation starts.</span></label>
-          <button className="record-button call-button" type="button" disabled>Phone calling is not connected yet</button>
-          <div className="api-config"><label className="select-label" htmlFor="backend-url">Backend server URL</label><input id="backend-url" className="phone-input" type="url" inputMode="url" placeholder="https://your-backend.example.com" value={apiBaseDraft} onChange={(event) => setApiBaseDraft(event.target.value)} /><button type="button" className="swap-button" onClick={saveApiBase}>Save backend address</button><p className="call-footnote">For an installed app, use your deployed HTTPS backend address. Do not enter API keys here.</p></div>
+          {!window.Capacitor?.isNativePlatform?.() && <div className="call-status-panel"><span className="status-dot offline" /><div><strong>Android app required</strong><p>Install the VaaniSetu Android app to configure Android call-redirection access. The current integration requires Android 10 or newer.</p></div></div>}
           {notice && <div className="notice" role="status"><p>{notice}</p></div>}
-          <div className="call-status-panel"><span className="status-dot offline" /><div><strong>Waiting for Exotel activation</strong><p>{callStatus?.note || "The phone-call service is being configured. No call will be placed from this screen yet."}</p></div></div>
-          <p className="call-footnote">The recipient will not need VaaniSetu installed. Real calls will only be enabled after the secure two-way audio bridge and provider permissions are verified.</p>
+          <div className="api-config"><label className="select-label" htmlFor="backend-url">Translation backend URL</label><input id="backend-url" className="phone-input" type="url" inputMode="url" placeholder="https://your-backend.example.com" value={apiBaseDraft} onChange={(event) => setApiBaseDraft(event.target.value)} /><button type="button" className="swap-button" onClick={saveApiBase}>Save backend address</button><p className="call-footnote">Use the deployed HTTPS API address. Do not enter API keys here.</p></div>
+          <div className="call-status-panel"><span className="status-dot offline" /><div><strong>Waiting for Exotel technical enablement</strong><p>{callStatus?.note || "No calls are redirected or placed. Exotel gateway routing remains disabled until the two-way audio bridge is verified."}</p></div></div>
+          <p className="call-footnote">Your normal Phone app remains in place. This build only requests Android's call-redirection permission and saves your language preference; it does not yet translate cellular calls.</p>
         </section>
       </section>}
       <footer><span>VaaniSetu · Android-ready prototype</span><span>22 languages for recognition and translation · 11 for generated voice</span></footer>
