@@ -55,3 +55,37 @@ footer { width: min(1040px,calc(100% - 48px)); margin: 0 auto; padding: 22px 0; 
 .swap-button { display: block; margin: 12px auto 0; padding: 8px 13px; border: 1px solid rgba(167,139,250,.35); border-radius: 9px; background: rgba(167,139,250,.09); color: #d4c9ff; font-size: 12px; font-weight: 600; cursor: pointer; }
 .swap-button:hover { background: rgba(167,139,250,.18); }
 .swap-button:disabled { opacity: .4; cursor: not-allowed; }
+
+.mobile-tabs { display: none; }
+.phone-input { width: 100%; padding: 14px; color: #f8fafc; background: #151c30; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; outline: none; font: inherit; }
+.phone-input:focus { border-color: #a78bfa; }
+.call-direction { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 26px; padding: 18px; border: 1px solid rgba(167,139,250,.22); border-radius: 14px; background: rgba(167,139,250,.07); }
+.call-direction div { display: grid; gap: 8px; }
+.call-direction strong { font-size: 16px; }
+.direction-arrow { color: #b6a4ff; font-size: 24px; }
+.call-swap { margin-top: 12px; }
+.call-consent { display: flex; align-items: flex-start; gap: 10px; margin-top: 22px; color: #aab3c5; font-size: 11px; line-height: 1.55; }
+.call-consent input { margin-top: 2px; accent-color: #a78bfa; }
+.call-button:disabled { opacity: .55; background: #5d5870; color: #fff; cursor: not-allowed; }
+.call-status-panel { display: flex; gap: 12px; align-items: flex-start; margin-top: 18px; padding: 15px; border: 1px solid rgba(251,191,36,.2); border-radius: 12px; background: rgba(251,191,36,.06); }
+.call-status-panel .status-dot { flex: 0 0 7px; margin-top: 5px; }
+.call-status-panel strong { font-size: 13px; }
+.call-status-panel p, .call-footnote { margin: 7px 0 0; color: #aab3c5; font-size: 11px; line-height: 1.6; }
+.call-footnote { margin-top: 16px; }
+@media (max-width: 640px) {
+  .page-shell { padding-bottom: 82px; }
+  .topbar { height: 64px; }
+  .mobile-tabs { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(100% - 28px, 500px); margin: 14px auto 0; padding: 5px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: rgba(18,24,42,.94); backdrop-filter: blur(16px); }
+  .mobile-tabs button { display: flex; justify-content: center; align-items: center; gap: 8px; min-height: 42px; border: 0; border-radius: 10px; background: transparent; color: #aab3c5; font-weight: 600; font-size: 13px; }
+  .mobile-tabs button.active { color: #17122b; background: #b6a4ff; }
+  .hero { width: min(100% - 28px, 500px); padding: 30px 0 28px; }
+  .call-hero { padding-top: 30px; }
+  h1 { font-size: clamp(34px, 10vw, 48px); }
+  .intro { font-size: 14px; }
+  .recorder-card { margin-top: 22px; padding: 18px; border-radius: 18px; }
+  .recorder-heading h2 { font-size: 18px; }
+  .mic-orb { width: 82px; height: 82px; }
+  .record-button { min-height: 52px; }
+  .privacy-note { padding: 0 3px; }
+  footer { display: none; }
+}

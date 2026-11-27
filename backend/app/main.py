@@ -12,7 +12,7 @@ from app.media_bridge import router as media_bridge_router
 app = FastAPI(title="VaaniSetu API", description="Backend for multilingual Indian-language voice translation.", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=list(settings.frontend_origins),
+    allow_origins=sorted(set(settings.frontend_origins) | {"https://localhost", "capacitor://localhost"}),
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],

@@ -1,0 +1,14 @@
+{
+  "name": "VaaniSetu",
+  "short_name": "VaaniSetu",
+  "description": "Speak freely across Indian languages.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    { "src": "/vaanisetu-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

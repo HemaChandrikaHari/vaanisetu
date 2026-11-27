@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const MAX_RECORDING_SECONDS = 25;
 
 export default function App() {
+  const [apiBase, setApiBase] = useState(() => localStorage.getItem("vaanisetu_api_base") || DEFAULT_API_BASE);
+  const [apiBaseDraft, setApiBaseDraft] = useState(() => localStorage.getItem("vaanisetu_api_base") || DEFAULT_API_BASE);
   const [backend, setBackend] = useState(null);
   const [languages, setLanguages] = useState([]);
   const [ttsLanguages, setTtsLanguages] = useState([]);
@@ -18,13 +20,18 @@ export default function App() {
   const [audioUrl, setAudioUrl] = useState("");
   const [translatedAudioUrl, setTranslatedAudioUrl] = useState("");
   const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [activeTab, setActiveTab] = useState("translate");
+  const [callerNumber, setCallerNumber] = useState("");
+  const [recipientNumber, setRecipientNumber] = useState("");
+  const [callConsent, setCallConsent] = useState(false);
+  const [callStatus, setCallStatus] = useState(null);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/health`)
+    fetch(`${apiBase}/health`)
       .then((response) => {
         if (!response.ok) throw new Error("Backend unavailable");
         return response.json();
@@ -32,7 +39,7 @@ export default function App() {
       .then(setBackend)
       .catch(() => setBackend({ status: "offline" }));
 
-    fetch(`${API_BASE}/api/languages`)
+    fetch(`${apiBase}/api/languages`)
       .then((response) => response.json())
       .then((data) => {
         setLanguages(data.languages || []);
@@ -40,11 +47,32 @@ export default function App() {
       })
       .catch(() => setLanguages([]));
 
+    fetch(`${apiBase}/api/calls/provider-status`)
+      .then((response) => response.ok ? response.json() : null)
+      .then(setCallStatus)
+      .catch(() => setCallStatus(null));
+
     return () => {
       window.clearInterval(timerRef.current);
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
-  }, []);
+  }, [apiBase]);
+
+  function saveApiBase() {
+    try {
+      const parsed = new URL(apiBaseDraft.trim());
+      if (!["https:", "http:"].includes(parsed.protocol)) throw new Error("Use an HTTP or HTTPS backend URL.");
+      if (parsed.protocol === "http:" && !["localhost", "127.0.0.1"].includes(parsed.hostname) && !/^192\.168\./.test(parsed.hostname) && !/^10\./.test(parsed.hostname)) {
+        throw new Error("Use HTTPS for public backend servers.");
+      }
+      const clean = parsed.origin.replace(/\/$/, "");
+      localStorage.setItem("vaanisetu_api_base", clean);
+      setApiBase(clean);
+      setNotice("Backend address saved. Reconnecting…");
+    } catch (error) {
+      setNotice(error.message || "Enter a valid backend URL.");
+    }
+  }
 
   async function startRecording() {
     setNotice("");
@@ -119,7 +147,7 @@ export default function App() {
       const form = new FormData();
       const extension = blob.type.includes("ogg") ? "ogg" : "webm";
       form.append("file", blob, `vaanisetu-recording.${extension}`);
-      const speechResponse = await fetch(`${API_BASE}/api/speech/transcribe?language_code=${encodeURIComponent(languageCode)}`, {
+      const speechResponse = await fetch(`${apiBase}/api/speech/transcribe?language_code=${encodeURIComponent(languageCode)}`, {
         method: "POST",
         body: form,
       });
@@ -128,7 +156,7 @@ export default function App() {
       setTranscript(speechData.transcript);
 
       setNotice("2/3 · Translating the recognised text…");
-      const translationResponse = await fetch(`${API_BASE}/api/translation/translate`, {
+      const translationResponse = await fetch(`${apiBase}/api/translation/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -142,7 +170,7 @@ export default function App() {
       setTranslatedText(translationData.translated_text);
 
       setNotice("3/3 · Generating the translated voice…");
-      const ttsResponse = await fetch(`${API_BASE}/api/speech/synthesize`, {
+      const ttsResponse = await fetch(`${apiBase}/api/speech/synthesize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -192,7 +220,11 @@ export default function App() {
           API {backendOnline ? "connected" : "offline"}
         </span>
       </nav>
-      <section className="hero">
+      <nav className="mobile-tabs" aria-label="Main navigation">
+        <button type="button" className={activeTab === "translate" ? "active" : ""} onClick={() => setActiveTab("translate")}><span>◉</span> Translate</button>
+        <button type="button" className={activeTab === "call" ? "active" : ""} onClick={() => setActiveTab("call")}><span>☎</span> Phone call</button>
+      </nav>
+      {activeTab === "translate" ? <section className="hero">
         <p className="eyebrow">VOICE-FIRST COMMUNICATION</p>
         <h1>Speak freely.<br /><span>Understand each other.</span></h1>
         <p className="intro">Speak in your language. VaaniSetu recognises your words, translates them and speaks them in another Indian language.</p>
@@ -232,8 +264,27 @@ export default function App() {
           {notice && <div className="notice" role="status"><span className="notice-icon">i</span><p>{notice}</p></div>}
         </section>
         <div className="privacy-note"><span>🔒</span><p>Audio is processed in memory by this backend and is not saved to disk by VaaniSetu. In live mode, the clip is sent to Sarvam AI for transcription. Translated text is sent to Sarvam for voice generation.</p></div>
-      </section>
-      <footer><span>VaaniSetu · Prototype 0.3.0</span><span>22 languages for recognition and translation · 11 for generated voice</span></footer>
+      </section> : <section className="hero call-hero">
+        <p className="eyebrow">ONE APP. TWO LANGUAGES. NO APP NEEDED FOR THE OTHER PERSON.</p>
+        <h1>Make every<br /><span>conversation closer.</span></h1>
+        <p className="intro">Start a translated phone call from VaaniSetu. The person you call answers their regular phone — they do not need to install this app.</p>
+        <section className="recorder-card call-card">
+          <div className="recorder-heading"><div><span className="field-label">TRANSLATED PHONE CALL</span><h2>Set up your call</h2></div><span className="mode-label">COMING SOON</span></div>
+          <label className="select-label" htmlFor="caller-number">Your phone number</label>
+          <input id="caller-number" className="phone-input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+91 98765 43210" value={callerNumber} onChange={(event) => setCallerNumber(event.target.value)} />
+          <label className="select-label" htmlFor="recipient-number">Person you want to call</label>
+          <input id="recipient-number" className="phone-input" type="tel" inputMode="tel" placeholder="+91 98765 43210" value={recipientNumber} onChange={(event) => setRecipientNumber(event.target.value)} />
+          <div className="call-direction"><div><span className="field-label">YOU SPEAK</span><strong>{languages.find((item) => item.code === languageCode)?.name || "Telugu"}</strong></div><span className="direction-arrow">⇄</span><div><span className="field-label">THEY HEAR</span><strong>{ttsLanguages.find((item) => item.code === targetLanguageCode)?.name || "Hindi"}</strong></div></div>
+          <button type="button" className="swap-button call-swap" onClick={swapLanguages} disabled={!canSwapLanguages}>↕ Reverse call languages</button>
+          <label className="call-consent"><input type="checkbox" checked={callConsent} onChange={(event) => setCallConsent(event.target.checked)} /><span>I will tell the other person this call is translated and obtain their consent before translation starts.</span></label>
+          <button className="record-button call-button" type="button" disabled>Phone calling is not connected yet</button>
+          <div className="api-config"><label className="select-label" htmlFor="backend-url">Backend server URL</label><input id="backend-url" className="phone-input" type="url" inputMode="url" placeholder="https://your-backend.example.com" value={apiBaseDraft} onChange={(event) => setApiBaseDraft(event.target.value)} /><button type="button" className="swap-button" onClick={saveApiBase}>Save backend address</button><p className="call-footnote">For an installed app, use your deployed HTTPS backend address. Do not enter API keys here.</p></div>
+          {notice && <div className="notice" role="status"><p>{notice}</p></div>}
+          <div className="call-status-panel"><span className="status-dot offline" /><div><strong>Waiting for Exotel activation</strong><p>{callStatus?.note || "The phone-call service is being configured. No call will be placed from this screen yet."}</p></div></div>
+          <p className="call-footnote">The recipient will not need VaaniSetu installed. Real calls will only be enabled after the secure two-way audio bridge and provider permissions are verified.</p>
+        </section>
+      </section>}
+      <footer><span>VaaniSetu · Android-ready prototype</span><span>22 languages for recognition and translation · 11 for generated voice</span></footer>
     </main>
   );
 }

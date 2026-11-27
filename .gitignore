@@ -16,6 +16,12 @@ node_modules/
 dist/
 .vite/
 
+# Android / Gradle
+**/.gradle/
+**/build/
+**/local.properties
+**/captures/
+
 # Editors and OS
 .vscode/
 .idea/

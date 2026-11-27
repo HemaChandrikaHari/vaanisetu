@@ -8,6 +8,9 @@ VaaniSetu is a voice-first, bidirectional translation prototype for conversation
 
 ### Implemented
 - React + Vite frontend and Python + FastAPI backend.
+- Capacitor Android project wrapping the mobile interface, plus an installable PWA manifest and static app-shell cache.
+- Mobile Translate / Phone call navigation and a phone-call setup screen that stays disabled until Exotel is ready.
+- Android microphone permission declaration and configurable backend URL for installed builds.
 - Demo/live configuration scaffolding.
 - Browser microphone recording (up to 25 seconds per turn).
 - Server-side Sarvam Saaras v4 speech-to-text integration.
@@ -161,9 +164,9 @@ recording is not sufficient for reliable bidirectional translation.
 
 ## Hackathon demo
 
-See [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md) for startup steps, test utterances, and an accurate description of what the current prototype does and does not demonstrate.
+See [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md) for startup steps, test utterances, and an accurate description of what the current prototype does and does not demonstrate. See [ANDROID_SETUP.md](ANDROID_SETUP.md) for Android build and installation instructions.
 
-GitHub Actions runs backend API tests and a frontend production build on pushes and pull requests to `main`.
+GitHub Actions runs backend API tests, a frontend production build, and an Android debug APK build on pushes and pull requests to `main`. The Android APK is uploaded as the `vaanisetu-android-debug` workflow artifact when the build succeeds.
 
 ## Planned milestones
 

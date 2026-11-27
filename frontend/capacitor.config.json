@@ -1,0 +1,8 @@
+{
+  "appId": "com.vaanisetu.app",
+  "appName": "VaaniSetu",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
