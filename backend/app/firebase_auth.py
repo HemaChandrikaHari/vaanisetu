@@ -41,8 +41,12 @@ async def require_firebase_user(
 
     from firebase_admin import auth
     try:
-        return auth.verify_id_token(credentials.credentials, app=app, check_revoked=True)
+        decoded = auth.verify_id_token(credentials.credentials, app=app, check_revoked=True)
     except (auth.InvalidIdTokenError, auth.ExpiredIdTokenError, auth.RevokedIdTokenError, auth.UserDisabledError):
         raise HTTPException(status_code=401, detail="Your sign-in has expired. Please sign in again.", headers={"WWW-Authenticate": "Bearer"})
     except Exception:
         raise HTTPException(status_code=401, detail="Firebase sign-in could not be verified.", headers={"WWW-Authenticate": "Bearer"})
+
+    if not decoded.get("email_verified", False):
+        raise HTTPException(status_code=403, detail="Please verify your email address before using VaaniSetu.")
+    return decoded

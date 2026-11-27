@@ -1,6 +1,6 @@
 # Firebase Authentication Setup — VaaniSetu
 
-This project uses the Capawesome Capacitor Firebase Authentication plugin (Capacitor 8) for native Android phone-number sign-in and email/password account linking.
+This project uses the Capawesome Capacitor Firebase Authentication plugin (Capacitor 8) for email/password sign-in with mandatory email verification. The registration form also collects a mobile number as contact information; it is not SMS-verified.
 
 ## 1. Firebase project
 
@@ -28,18 +28,11 @@ frontend/android/app/google-services.json
 
 Do not rename the file or put it in the frontend root. It is intentionally excluded from Git. Do not paste its contents into chat.
 
-## 4. Authentication providers and SMS policy
+## 4. Authentication providers
 
-In Firebase Console > Authentication > Sign-in method, enable:
+In Firebase Console > Authentication > Sign-in method, enable **Email/Password**. The app creates an email/password account and sends Firebase's built-in email verification link. The user must verify the address before protected VaaniSetu APIs will accept the Firebase ID token.
 
-- Phone
-- Email/Password
-
-Both providers were confirmed enabled in the Firebase Console on 27 November 2026.
-
-New Firebase projects currently show a 10-SMS-per-day quota. Do not add a billing account without explicit approval. The India (+91) SMS region policy still needs confirmation in Firebase Authentication > Settings > SMS region policy.
-
-For development, configure Firebase test phone numbers and fixed test codes in the Phone provider settings. These do not send real SMS and avoid consuming the SMS quota. Use only a number you control and remove or rotate test credentials before production.
+Phone Authentication is no longer used by the current app flow. Do not enable Firebase billing for SMS on behalf of this project. The mobile number field is collected as contact information only and is not proof of phone ownership. In this version it is stored locally on the device; cloud profile storage can be added separately if cross-device access is required.
 
 ## 5. Firebase Admin service account for backend verification
 
@@ -49,7 +42,7 @@ Generate a private key from Firebase Console > Project settings > Service accoun
 
 For local development, set `FIREBASE_SERVICE_ACCOUNT_JSON` in `backend/.env` to the complete JSON object on one line. For Render, add the same variable as a private secret in the `vaanisetu-api` service Environment settings. The Render blueprint declares this variable with `sync: false`; it must be populated privately in the Render dashboard.
 
-After setting the secret, redeploy the Render service. The `/health` endpoint intentionally does not expose credential contents. A protected endpoint without a bearer token should return HTTP 401. A protected endpoint with a valid Firebase ID token should proceed to its application logic.
+After setting the secret, redeploy the Render service. The `/health` endpoint intentionally does not expose credential contents. A protected endpoint without a bearer token should return HTTP 401. A protected endpoint with a valid Firebase ID token should proceed to its application logic only when the token has `email_verified: true`; unverified email accounts receive HTTP 403.
 
 ## 6. Rebuild and test
 
@@ -69,12 +62,13 @@ The debug APK is generated at:
 frontend/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Test a Firebase test phone number first. Then test a real phone number only after checking the current Firebase SMS limits and pricing. Live SMS authentication has not yet been tested.
+Create a new account with an email address, open the Firebase verification email, return to the app and tap ?I've verified my email?. Confirm that an unverified account cannot access protected APIs and that a verified account can. No SMS should be sent.
 
 ## Security behavior
 
-- Phone number is the primary verified sign-in method.
-- Email/password is linked to the same Firebase user after phone verification.
+- Email/password is the sign-in method.
+- Email verification is mandatory before access to the app and protected APIs.
+- Mobile number is collected as contact information only; it is not SMS-verified.
 - The recipient of a translated call does not need a VaaniSetu account.
 - Speech transcription, translation, speech synthesis, and call initiation require `Authorization: Bearer <Firebase ID token>`.
 - `/health`, `/`, `/api/languages`, and `/api/calls/provider-status` remain public read-only diagnostics.
@@ -84,10 +78,10 @@ Test a Firebase test phone number first. Then test a real phone number only afte
 
 ## Release checklist
 
-- [ ] Confirm India (+91) is allowed in the Firebase Phone Authentication SMS region policy.
-- [ ] Add a development test phone number and fixed test code.
+- [ ] Confirm Email/Password is enabled in Firebase Authentication.
+- [ ] Test email verification and protected API rejection for unverified accounts.
 - [ ] Keep Firebase service-account JSON private and set `FIREBASE_SERVICE_ACCOUNT_JSON` in Render.
 - [ ] Deploy the latest `main` commit and verify valid/invalid token behavior.
-- [ ] Install the current debug APK and test phone sign-in and email linking using the Firebase test number.
-- [ ] Test a real SMS only after confirming quota and billing requirements. Never enable billing automatically.
+- [ ] Install the current debug APK and test registration, email verification, sign-in, and sign-out.
+- [ ] Confirm no SMS is sent and Firebase billing remains disabled.
 - [ ] Add per-user rate limits and usage limits for paid Sarvam requests before public launch.
