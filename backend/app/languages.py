@@ -4,7 +4,7 @@ ASR, translation, and TTS do not have identical language coverage.
 """
 SUPPORTED_LANGUAGES = [
     {"code": "as-IN", "name": "Assamese"}, {"code": "bn-IN", "name": "Bengali"},
-    {"code": "brx-IN", "name": "Bodo"}, {"code": "doi-IN", "name": "Dogri"},
+    {"code": "brx-IN", "name": "Bodo"}, {"code": "doi-IN", "name": "Dogri"}, {"code": "en-IN", "name": "English (India)"},
     {"code": "gu-IN", "name": "Gujarati"}, {"code": "hi-IN", "name": "Hindi"},
     {"code": "kn-IN", "name": "Kannada"}, {"code": "ks-IN", "name": "Kashmiri"},
     {"code": "kok-IN", "name": "Konkani"}, {"code": "mai-IN", "name": "Maithili"},
