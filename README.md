@@ -121,6 +121,10 @@ Saaras v4 speech recognition and Sarvam Translate v1 support all 22 scheduled In
 
 The application does not persist uploaded audio to disk. In live mode, the audio clip and text are transmitted to Sarvam AI for processing, subject to that provider's terms and privacy practices. Obtain clear consent before recording or processing another person's speech. Do not use this prototype for emergency or high-stakes medical communication.
 
+## Backend deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the Render Blueprint deployment steps. The deployed API enables the existing short-turn Sarvam translation pipeline to be reached from the Android app. Keep Exotel outbound calling disabled: the production two-person PSTN media bridge is not yet implemented or verified.
+
 ## Phone-call integration (in progress)
 
 The first PSTN provider being evaluated is Exotel India. Its Voice V1
