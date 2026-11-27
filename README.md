@@ -2,7 +2,7 @@
 
 **Speak your language. Let everyone understand you.**
 
-VaaniSetu is a voice-first, bidirectional translation prototype for conversations across Indian languages. The long-term target is all 22 scheduled Indian languages; the initial end-to-end pair is Telugu ↔ Hindi.
+VaaniSetu is a voice-first, bidirectional translation prototype for conversations across Indian languages. The long-term target is all 22 scheduled Indian languages; the first complete voice path is Telugu → Hindi.
 
 ## Project status
 
@@ -11,24 +11,32 @@ VaaniSetu is a voice-first, bidirectional translation prototype for conversation
 - Demo/live configuration scaffolding.
 - Browser microphone recording (up to 25 seconds per turn).
 - Server-side Sarvam Saaras v4 speech-to-text integration.
-- Language selector populated from a 22-language registry.
-- Audio preview and transcript display.
+- Sarvam Translate v1 text translation integration.
+- Sarvam Bulbul v4 Flash text-to-speech integration.
+- Language selector populated from a 22-language speech/translation registry.
+- Separate output-language selector restricted to the current 11-language Bulbul TTS coverage.
+- Original transcript, translated text and generated audio playback.
 - Uploaded audio is processed in memory by this app and is not written to disk.
 
 ### Not implemented yet
-- Text translation.
-- Text-to-speech.
 - Two-participant conversation rooms.
 - WebRTC / continuous streaming.
 - Cellular phone-call integration.
+- Advanced noise suppression, interruption handling and live partial transcripts.
 
-## Architecture
+## Current end-to-end flow
 
 ```text
-Browser microphone -> React -> FastAPI -> Sarvam Saaras v4 -> transcript
+Browser microphone
+  -> React frontend
+  -> FastAPI backend
+  -> Sarvam Saaras v4 (speech -> source-language text)
+  -> Sarvam Translate v1 (source text -> target text)
+  -> Sarvam Bulbul v4 Flash (target text -> WAV audio)
+  -> Browser plays translated voice
 ```
 
-The first speech milestone uses short turns. Sarvam's synchronous speech-to-text REST API accepts clips up to 30 seconds; the UI caps recordings at 25 seconds. Streaming will follow after short-turn processing is validated.
+The first version uses short speech turns. The UI caps recordings at 25 seconds. Streaming will follow after the short-turn pipeline is validated.
 
 ## Requirements
 
@@ -70,9 +78,9 @@ Vite prints the local frontend URL (usually http://localhost:5173).
 
 ## Demo mode and live AI mode
 
-The app starts in demo mode without credentials. In demo mode, the microphone can record and preview a short clip locally, but audio is not sent to Sarvam. No transcript is fabricated or presented as AI output.
+The app starts in demo mode without credentials. In demo mode, the microphone can record and preview a short clip locally, but audio is not sent to Sarvam. No transcript or translation is fabricated.
 
-To enable real transcription, create a Sarvam API key in the Sarvam dashboard, then edit `backend/.env`:
+To enable real voice translation, create a Sarvam API key in the Sarvam dashboard, then edit `backend/.env`:
 
 ```env
 APP_MODE=live
@@ -86,25 +94,27 @@ Restart the backend after changing environment variables. The browser sends audi
 
 - `GET /` — service status.
 - `GET /health` — backend mode and provider configuration status.
-- `GET /api/languages` — supported speech/translation language codes.
+- `GET /api/languages` — language lists and model capability information.
 - `POST /api/speech/transcribe?language_code=te-IN` — transcribe a short audio upload using Saaras v4.
+- `POST /api/translation/translate` — translate source text using Sarvam Translate v1.
+- `POST /api/speech/synthesize` — generate WAV speech using Bulbul v4 Flash.
 
 ## Language capability note
 
-The language registry reflects Sarvam's current Saaras v4 speech recognition and Sarvam Translate v1 language lists. Text-to-speech has a different supported-language set; do not assume all 22 languages are available for generated voice until validated separately.
+Saaras v4 speech recognition and Sarvam Translate v1 support all 22 scheduled Indian languages. Bulbul TTS currently supports 11 languages: Bengali, English (India), Gujarati, Hindi, Kannada, Malayalam, Marathi, Odia, Punjabi, Tamil and Telugu. The UI therefore allows all supported source languages but only offers currently supported TTS target languages.
 
 ## Privacy and safety
 
-The application does not persist uploaded audio to disk. In live mode, the audio clip is transmitted to Sarvam AI for transcription, subject to that provider's terms and privacy practices. Obtain clear consent before recording or processing another person's speech. Do not use this prototype for emergency or high-stakes medical communication.
+The application does not persist uploaded audio to disk. In live mode, the audio clip and text are transmitted to Sarvam AI for processing, subject to that provider's terms and privacy practices. Obtain clear consent before recording or processing another person's speech. Do not use this prototype for emergency or high-stakes medical communication.
 
 ## Planned milestones
 
 1. Repository and application foundation.
 2. Microphone capture and speech recognition.
-3. Telugu ↔ Hindi translation.
-4. Translated speech generation.
-5. Two-participant browser conversation.
-6. Noise, accent, mixed-language and latency testing.
+3. Telugu ↔ Hindi translation and voice generation.
+4. Two-participant browser conversation.
+5. Streaming, noise, accent, mixed-language and latency testing.
+6. Deployment and demo hardening.
 
 ## License
 
