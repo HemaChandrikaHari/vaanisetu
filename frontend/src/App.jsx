@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { registerPlugin } from "@capacitor/core";
+
+const CallRedirection = registerPlugin("CallRedirection");
 
 const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const MAX_RECORDING_SECONDS = 25;
@@ -25,6 +28,8 @@ export default function App() {
   const [recipientNumber, setRecipientNumber] = useState("");
   const [callConsent, setCallConsent] = useState(false);
   const [callStatus, setCallStatus] = useState(null);
+  const [androidCallStatus, setAndroidCallStatus] = useState(null);
+  const [androidCallBusy, setAndroidCallBusy] = useState(false);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
@@ -51,6 +56,10 @@ export default function App() {
       .then((response) => response.ok ? response.json() : null)
       .then(setCallStatus)
       .catch(() => setCallStatus(null));
+
+    if (window.Capacitor?.isNativePlatform?.()) {
+      CallRedirection.getStatus().then(setAndroidCallStatus).catch(() => setAndroidCallStatus({ supported: false }));
+    }
 
     return () => {
       window.clearInterval(timerRef.current);
@@ -209,6 +218,34 @@ export default function App() {
     setNotice("Direction switched. You can now translate the other way.");
   }
 
+  async function requestAndroidCallRole() {
+    setAndroidCallBusy(true);
+    try {
+      const result = await CallRedirection.requestRole();
+      const status = await CallRedirection.getStatus();
+      setAndroidCallStatus(status);
+      setNotice(result?.roleHeld ? "Android call-redirection permission is enabled." : "Android call-redirection permission was not granted.");
+    } catch (error) {
+      setNotice(error.message || "Could not request Android call-redirection permission.");
+    } finally {
+      setAndroidCallBusy(false);
+    }
+  }
+
+  async function saveAndroidCallLanguages() {
+    setAndroidCallBusy(true);
+    try {
+      await CallRedirection.saveLanguageDirection({ sourceLanguage: languageCode, targetLanguage: targetLanguageCode });
+      const status = await CallRedirection.getStatus();
+      setAndroidCallStatus(status);
+      setNotice("Your preferred call language direction has been saved on this Android device.");
+    } catch (error) {
+      setNotice(error.message || "Could not save the call language direction.");
+    } finally {
+      setAndroidCallBusy(false);
+    }
+  }
+
   return (
     <main className="page-shell">
       <nav className="topbar">
@@ -269,7 +306,30 @@ export default function App() {
         <h1>Make every<br /><span>conversation closer.</span></h1>
         <p className="intro">Start a translated phone call from VaaniSetu. The person you call answers their regular phone — they do not need to install this app.</p>
         <section className="recorder-card call-card">
-          <div className="recorder-heading"><div><span className="field-label">TRANSLATED PHONE CALL</span><h2>Set up your call</h2></div><span className="mode-label">COMING SOON</span></div>
+          <div className="recorder-heading"><div><span className="field-label">TRANSLATED PHONE CALL</span><h2>Set up your call</h2></div><span className="mode-label">ANDROID INTEGRATION</span></div>
+          {window.Capacitor?.isNativePlatform?.() && <section className="android-integration-panel">
+            <span className="field-label">ANDROID PHONE APP INTEGRATION</span>
+            <p>Allow VaaniSetu to handle outgoing-call routing on this device. Your regular Phone app remains your dialler.</p>
+            <label className="select-label" htmlFor="call-source-language">You speak</label>
+            <select id="call-source-language" value={languageCode} onChange={(event) => setLanguageCode(event.target.value)} disabled={androidCallBusy}>
+              {languages.map((language) => <option key={language.code} value={language.code}>{language.name}</option>)}
+            </select>
+            <label className="select-label" htmlFor="call-target-language">They speak</label>
+            <select id="call-target-language" value={targetLanguageCode} onChange={(event) => setTargetLanguageCode(event.target.value)} disabled={androidCallBusy}>
+              {languages.map((language) => <option key={language.code} value={language.code}>{language.name}</option>)}
+            </select>
+            <button type="button" className="swap-button" onClick={saveAndroidCallLanguages} disabled={androidCallBusy || languageCode === targetLanguageCode}>Save call languages</button>
+            <div className="call-status-panel">
+              <span className={`status-dot ${androidCallStatus?.roleHeld ? "connected" : "offline"}`} />
+              <div><strong>{androidCallStatus?.roleHeld ? "Android call-redirection access granted" : "Android call-redirection access not enabled"}</strong>
+                <p>{androidCallStatus?.supported === false ? "This feature requires Android 10 or newer." : "This permission lets Android notify VaaniSetu about outgoing calls. It does not replace your Phone app."}</p>
+              </div>
+            </div>
+            <button type="button" className="record-button" onClick={requestAndroidCallRole} disabled={androidCallBusy || androidCallStatus?.roleHeld || androidCallStatus?.supported === false}>
+              {androidCallBusy ? "Please wait…" : androidCallStatus?.roleHeld ? "Android access enabled" : "Enable Android call integration"}
+            </button>
+            <p className="call-footnote">Safety: normal calls still go through unchanged. Automatic translation routing stays off until Exotel confirms the gateway and two-way audio protocol.</p>
+          </section>}
           <label className="select-label" htmlFor="caller-number">Your phone number</label>
           <input id="caller-number" className="phone-input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+91 98765 43210" value={callerNumber} onChange={(event) => setCallerNumber(event.target.value)} />
           <label className="select-label" htmlFor="recipient-number">Person you want to call</label>

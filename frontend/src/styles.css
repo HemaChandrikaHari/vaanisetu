@@ -89,3 +89,8 @@ footer { width: min(1040px,calc(100% - 48px)); margin: 0 auto; padding: 22px 0; 
   .privacy-note { padding: 0 3px; }
   footer { display: none; }
 }
+
+.android-integration-panel { margin-top: 22px; padding: 18px; border: 1px solid rgba(167,139,250,.25); border-radius: 14px; background: rgba(167,139,250,.07); }
+.android-integration-panel > p { margin: 9px 0 0; color: #aab3c5; font-size: 12px; line-height: 1.6; }
+.android-integration-panel .select-label { margin-top: 16px; }
+.android-integration-panel .call-status-panel { margin-top: 16px; }
