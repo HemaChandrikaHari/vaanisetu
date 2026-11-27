@@ -3,6 +3,7 @@ import unittest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.firebase_auth import require_firebase_user
 from app.exotel_client import ExotelClient
 
 
@@ -10,6 +11,11 @@ class ExotelOrchestrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = TestClient(app)
+        app.dependency_overrides[require_firebase_user] = lambda: {"uid": "test-user"}
+
+    @classmethod
+    def tearDownClass(cls):
+        app.dependency_overrides.pop(require_firebase_user, None)
 
     def test_leg_sid_parser_handles_documented_nested_response_shapes(self):
         self.assertEqual(

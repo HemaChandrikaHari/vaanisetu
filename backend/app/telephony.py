@@ -16,6 +16,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, Field
 
 from app.config import settings
+from app.firebase_auth import require_firebase_user
 from app.exotel_client import ExotelApiError, ExotelClient
 from app.languages import LANGUAGE_CODES, TTS_LANGUAGE_CODES
 
@@ -123,7 +124,7 @@ async def _process_exotel_event(
 
 
 @router.post("/start", status_code=status.HTTP_202_ACCEPTED)
-async def start_call(request: StartCallRequest):
+async def start_call(request: StartCallRequest, current_user: dict = Depends(require_firebase_user)):
     """Initiate two independent PSTN legs, one for each participant."""
     if not request.consent_confirmed:
         raise HTTPException(status_code=400, detail="Confirm that both participants have agreed to an AI-translated call.")

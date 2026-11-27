@@ -1,5 +1,7 @@
 import httpx
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+
+from app.firebase_auth import require_firebase_user
 
 from app.config import settings
 from app.languages import LANGUAGE_CODES
@@ -13,6 +15,7 @@ MAX_AUDIO_BYTES = 10 * 1024 * 1024
 async def transcribe_audio(
     file: UploadFile = File(...),
     language_code: str = Query(default="te-IN"),
+    current_user: dict = Depends(require_firebase_user),
 ):
     """Transcribe one short audio turn. Audio is processed in memory, not saved."""
     if language_code not in LANGUAGE_CODES:

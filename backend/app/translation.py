@@ -1,5 +1,7 @@
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.firebase_auth import require_firebase_user
 from pydantic import BaseModel, Field
 
 from app.config import settings
@@ -16,7 +18,7 @@ class TranslationRequest(BaseModel):
 
 
 @router.post("/translate")
-async def translate_text(payload: TranslationRequest):
+async def translate_text(payload: TranslationRequest, current_user: dict = Depends(require_firebase_user)):
     if payload.source_language_code not in LANGUAGE_CODES or payload.target_language_code not in LANGUAGE_CODES:
         raise HTTPException(status_code=400, detail="Unsupported language code. Use GET /api/languages.")
     if payload.source_language_code == payload.target_language_code:

@@ -3,12 +3,18 @@ import unittest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.firebase_auth import require_firebase_user
 
 
 class VaaniSetuApiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = TestClient(app)
+        app.dependency_overrides[require_firebase_user] = lambda: {"uid": "test-user"}
+
+    @classmethod
+    def tearDownClass(cls):
+        app.dependency_overrides.pop(require_firebase_user, None)
 
     def test_health_does_not_expose_secrets(self):
         response = self.client.get("/health")
@@ -18,6 +24,16 @@ class VaaniSetuApiTests(unittest.TestCase):
         self.assertIn("sarvam_configured", body)
         self.assertNotIn("api_key", body)
         self.assertNotIn("api_token", body)
+
+    def test_protected_api_rejects_missing_bearer_token(self):
+        app.dependency_overrides.pop(require_firebase_user, None)
+        try:
+            response = self.client.post("/api/translation/translate", json={
+                "text": "Hello", "source_language_code": "en-IN", "target_language_code": "hi-IN"
+            })
+            self.assertEqual(response.status_code, 401)
+        finally:
+            app.dependency_overrides[require_firebase_user] = lambda: {"uid": "test-user"}
 
     def test_language_registry_has_separate_tts_coverage(self):
         response = self.client.get("/api/languages")

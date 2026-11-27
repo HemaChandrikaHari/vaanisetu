@@ -2,7 +2,9 @@ import base64
 import binascii
 
 import httpx
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
+
+from app.firebase_auth import require_firebase_user
 from pydantic import BaseModel, Field
 
 from app.config import settings
@@ -21,7 +23,7 @@ class SpeechSynthesisRequest(BaseModel):
 
 
 @router.post("/synthesize")
-async def synthesize_speech(payload: SpeechSynthesisRequest):
+async def synthesize_speech(payload: SpeechSynthesisRequest, current_user: dict = Depends(require_firebase_user)):
     if payload.language_code not in TTS_LANGUAGE_CODES:
         raise HTTPException(
             status_code=400,

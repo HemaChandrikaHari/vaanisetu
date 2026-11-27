@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { registerPlugin } from "@capacitor/core";
 import AuthGate from "./AuthGate.jsx";
+import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 
 const CallRedirection = registerPlugin("CallRedirection");
 
 const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const MAX_RECORDING_SECONDS = 25;
+
+async function firebaseAuthHeaders(extra = {}) {
+  const { token } = await FirebaseAuthentication.getIdToken();
+  if (!token) throw new Error("Please sign in to VaaniSetu again.");
+  return { ...extra, Authorization: `Bearer ${token}` };
+}
 
 function AppContent() {
   const [apiBase, setApiBase] = useState(() => localStorage.getItem("vaanisetu_api_base") || DEFAULT_API_BASE);
@@ -156,6 +163,7 @@ function AppContent() {
       form.append("file", blob, `vaanisetu-recording.${extension}`);
       const speechResponse = await fetch(`${apiBase}/api/speech/transcribe?language_code=${encodeURIComponent(languageCode)}`, {
         method: "POST",
+        headers: await firebaseAuthHeaders(),
         body: form,
       });
       const speechData = await speechResponse.json();
@@ -165,7 +173,7 @@ function AppContent() {
       setNotice("2/3 · Translating the recognised text…");
       const translationResponse = await fetch(`${apiBase}/api/translation/translate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await firebaseAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           text: speechData.transcript,
           source_language_code: languageCode,
@@ -179,7 +187,7 @@ function AppContent() {
       setNotice("3/3 · Generating the translated voice…");
       const ttsResponse = await fetch(`${apiBase}/api/speech/synthesize`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await firebaseAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           text: translationData.translated_text,
           language_code: targetLanguageCode,
