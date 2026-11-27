@@ -126,14 +126,22 @@ account before enabling real calls.
 Backend scaffolding is present:
 - `GET /api/calls/provider-status` reports provider configuration without exposing credentials.
 - `POST /api/calls/start` validates Indian E.164 numbers, language direction,
-  and explicit consent before a call request.
-- Exotel credentials are read only from backend environment variables.
-- Outbound calling is deliberately blocked until the two-participant media
-  bridge is implemented and tested. No PSTN call can be placed by this build.
+  and explicit consent, but remains safety-blocked and places no call.
+- `backend/app/media_bridge.py` now contains a prototype Exotel AgentStream
+  WebSocket receiver, short-turn silence segmentation, Sarvam ASR → translation
+  → TTS processing, and translated-audio relay to the opposite participant
+  stream. It expects separate `caller` and `recipient` streams to share a
+  `session_id` supplied by the future call controller and uses a private media token.
+- The media WebSocket route is `/api/calls/media/{role}`. It is not yet wired
+  to ExoML leg creation, bridge membership, or public TLS hosting.
+- Exotel credentials and the media token are read only from backend environment
+  variables. No secrets belong in the frontend or Git.
+- Outbound calling remains deliberately blocked. No PSTN call can be placed
+  by this build.
 
 Required backend environment variables (keep values in `backend/.env` only):
 `EXOTEL_API_KEY`, `EXOTEL_API_TOKEN`, `EXOTEL_ACCOUNT_SID`,
-`EXOTEL_CALLER_ID`, and `EXOTEL_STREAM_URL`.
+`EXOTEL_CALLER_ID`, `EXOTEL_STREAM_URL`, and `EXOTEL_MEDIA_TOKEN`.
 Keep `ENABLE_OUTBOUND_CALLS=false` until the live media bridge, consent
 disclosure, abuse protection, and call-cost limits are ready.
 

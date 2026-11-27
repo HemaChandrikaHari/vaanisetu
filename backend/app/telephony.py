@@ -112,17 +112,18 @@ async def start_call(request: StartCallRequest):
 @router.get("/provider-status")
 async def provider_status():
     """Expose readiness without revealing credentials or phone numbers."""
-    configured = all((
+    credentials_configured = all((
         settings.exotel_api_key,
         settings.exotel_api_token,
         settings.exotel_account_sid,
         settings.exotel_caller_id,
-        settings.exotel_stream_url,
     ))
+    media_endpoint_configured = bool(settings.exotel_stream_url and settings.exotel_media_token)
     return {
         "provider": "exotel",
-        "credentials_configured": configured,
+        "credentials_configured": credentials_configured,
+        "media_endpoint_configured": media_endpoint_configured,
         "outbound_calls_enabled": settings.enable_outbound_calls,
         "media_bridge_ready": False,
-        "note": "Do not enable outbound calls until the live bidirectional translation media bridge is implemented and verified.",
+        "note": "The WebSocket media relay is a prototype; ExoML call orchestration and public deployment are not complete. No calls should be enabled.",
     }

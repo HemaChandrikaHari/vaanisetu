@@ -25,6 +25,7 @@ class Settings:
     exotel_caller_id: str = os.getenv("EXOTEL_CALLER_ID", "").strip()
     exotel_base_url: str = os.getenv("EXOTEL_BASE_URL", "https://api.in.exotel.com").strip()
     exotel_stream_url: str = os.getenv("EXOTEL_STREAM_URL", "").strip()
+    exotel_media_token: str = os.getenv("EXOTEL_MEDIA_TOKEN", "").strip()
     exotel_status_callback_url: str = os.getenv("EXOTEL_STATUS_CALLBACK_URL", "").strip()
     enable_outbound_calls: bool = os.getenv("ENABLE_OUTBOUND_CALLS", "false").strip().lower() == "true"
     max_call_seconds: int = int(os.getenv("MAX_CALL_SECONDS", "300"))
