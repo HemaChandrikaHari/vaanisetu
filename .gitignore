@@ -28,3 +28,5 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+frontend/android/app/google-services.json
+backend/firebase-service-account.json
