@@ -229,6 +229,19 @@ export default function App() {
     }
   }
 
+  async function refreshAndroidCallStatus() {
+    setAndroidCallBusy(true);
+    try {
+      const status = await CallRedirection.getStatus();
+      setAndroidCallStatus(status);
+      setNotice("Android call-redirection diagnostics refreshed.");
+    } catch (error) {
+      setNotice(error.message || "Could not refresh Android call status.");
+    } finally {
+      setAndroidCallBusy(false);
+    }
+  }
+
   async function saveAndroidCallLanguages() {
     setAndroidCallBusy(true);
     try {
@@ -325,7 +338,15 @@ export default function App() {
             <button type="button" className="record-button" onClick={requestAndroidCallRole} disabled={androidCallBusy || androidCallStatus?.roleHeld || androidCallStatus?.supported === false}>
               {androidCallBusy ? "Please wait…" : androidCallStatus?.roleHeld ? "Android access enabled" : "Enable Android call integration"}
             </button>
-            <p className="call-footnote">Safety: normal calls still go through unchanged. Automatic translation routing stays off until Exotel confirms the gateway and two-way audio protocol.</p>
+            <div className="call-status-panel">
+              <span className={`status-dot ${androidCallStatus?.lastInvocationAt ? "connected" : "offline"}`} />
+              <div>
+                <strong>{androidCallStatus?.lastInvocationAt ? "Android invoked VaaniSetu for an outgoing call" : "Outgoing-call interception not yet observed"}</strong>
+                <p>{androidCallStatus?.lastInvocationAt ? `Last event: ${new Date(androidCallStatus.lastInvocationAt).toLocaleString()}. The call was passed through unchanged.` : "After placing a normal, non-emergency call, return here and refresh this diagnostic."}</p>
+              </div>
+            </div>
+            <button type="button" className="swap-button" onClick={refreshAndroidCallStatus} disabled={androidCallBusy}>Refresh Android call diagnostics</button>
+            <p className="call-footnote">Safety: this diagnostic stores only the event time and decision, never the dialled number. Calls always proceed normally; translated routing remains unavailable until the Exotel two-way gateway is verified and implemented. This does not add a VaaniSetu button to the Phone dialler.</p>
           </section>}
           {!window.Capacitor?.isNativePlatform?.() && <div className="call-status-panel"><span className="status-dot offline" /><div><strong>Android app required</strong><p>Install the VaaniSetu Android app to configure Android call-redirection access. The current integration requires Android 10 or newer.</p></div></div>}
           {notice && <div className="notice" role="status"><p>{notice}</p></div>}

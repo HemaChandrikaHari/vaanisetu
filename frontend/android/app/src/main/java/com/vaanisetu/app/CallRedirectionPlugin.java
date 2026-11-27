@@ -21,6 +21,8 @@ public class CallRedirectionPlugin extends Plugin {
     private static final String KEY_GATEWAY_READY = "gateway_ready";
     private static final String KEY_SOURCE_LANGUAGE = "source_language";
     private static final String KEY_TARGET_LANGUAGE = "target_language";
+    private static final String KEY_LAST_INVOCATION = "last_redirection_invocation";
+    private static final String KEY_LAST_DECISION = "last_redirection_decision";
 
     @PluginMethod
     public void getStatus(PluginCall call) {
@@ -47,7 +49,9 @@ public class CallRedirectionPlugin extends Plugin {
         result.put("gatewayReady", prefs.getBoolean(KEY_GATEWAY_READY, false));
         result.put("sourceLanguage", prefs.getString(KEY_SOURCE_LANGUAGE, "te-IN"));
         result.put("targetLanguage", prefs.getString(KEY_TARGET_LANGUAGE, "hi-IN"));
-        result.put("note", "Normal calls are not redirected. Gateway activation is pending provider verification.");
+        result.put("lastInvocationAt", prefs.getLong(KEY_LAST_INVOCATION, 0L));
+        result.put("lastDecision", prefs.getString(KEY_LAST_DECISION, "not_observed"));
+        result.put("note", "The role is granted, but call interception has not been verified on this device. Calls always pass through unchanged until the Exotel gateway is ready.");
         call.resolve(result);
     }
 

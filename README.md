@@ -139,11 +139,14 @@ session, and inject translated audio into the opposite leg. The exact two-leg
 call/bridge sequence and AgentStream controls must be verified with Exotel's
 technical team and against the account before enabling real calls.
 
-The Android app now registers `VaaniSetuCallRedirectionService` and exposes a
+The Android app registers `VaaniSetuCallRedirectionService` and exposes a
 native permission/status bridge. The user can save their preferred source and
-target languages in advance. This is not a universal OEM dialler menu item;
-the current service always passes outgoing calls through unchanged until the
-Exotel gateway adapter is verified and implemented.
+target languages in advance. A privacy-preserving diagnostic records whether
+the OS invokes the service (timestamp and pass-through decision only; no phone
+number or contact data). The user can refresh this diagnostic after placing a
+normal call. This is not a universal OEM dialler menu item; the service always
+passes outgoing calls through unchanged until the Exotel gateway adapter is
+verified and implemented.
 
 Backend scaffolding is present:
 - `GET /api/calls/provider-status` reports provider configuration without exposing credentials.
