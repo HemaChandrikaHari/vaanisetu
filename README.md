@@ -143,11 +143,13 @@ Backend scaffolding is present:
 - `GET /api/calls/provider-status` reports provider configuration without exposing credentials.
 - `POST /api/calls/start` validates Indian E.164 numbers, language direction,
   and explicit consent, but remains safety-blocked and places no call.
-- `backend/app/media_bridge.py` now contains a prototype Exotel AgentStream
-  WebSocket receiver, short-turn silence segmentation, Sarvam ASR → translation
-  → TTS processing, and translated-audio relay to the opposite participant
-  stream. It expects separate `caller` and `recipient` streams to share a
-  `session_id` supplied by the future call controller and uses a private media token.
+- `backend/app/media_bridge.py` contains an isolated media-relay prototype and
+  provider-neutral PCM turn segmentation. The Exotel wire protocol, codec,
+  outbound-audio injection shape, and two-leg orchestration are not verified.
+  The WebSocket route refuses connections unless
+  `EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED=true` is explicitly set after account-
+  specific documentation review and live protocol tests. It is not enabled in
+  the deployed environment.
 - The media WebSocket route is `/api/calls/media/{role}`. It is not yet wired
   to ExoML leg creation, bridge membership, or public TLS hosting.
 - Exotel credentials and the media token are read only from backend environment
@@ -158,7 +160,9 @@ Backend scaffolding is present:
 Required backend environment variables (keep values in `backend/.env` only):
 `EXOTEL_API_KEY`, `EXOTEL_API_TOKEN`, `EXOTEL_ACCOUNT_SID`,
 `EXOTEL_CALLER_ID`, `EXOTEL_STREAM_URL`, and `EXOTEL_MEDIA_TOKEN`.
-Keep `ENABLE_OUTBOUND_CALLS=false` until the live media bridge, consent
+Keep `EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED=false` until Exotel confirms the
+account-specific protocol and incoming/outgoing audio tests pass. Keep
+`ENABLE_OUTBOUND_CALLS=false` until the live media bridge, consent
 disclosure, abuse protection, and call-cost limits are ready.
 
 The critical next engineering task is to keep each participant's audio

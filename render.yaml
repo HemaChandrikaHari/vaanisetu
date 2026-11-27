@@ -19,5 +19,7 @@ services:
         value: capacitor://localhost,https://localhost
       - key: ENABLE_OUTBOUND_CALLS
         value: "false"
+      - key: EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED
+        value: "false"
       - key: MAX_CALL_SECONDS
         value: "300"

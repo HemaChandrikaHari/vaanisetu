@@ -1,38 +1,66 @@
 # VaaniSetu hackathon demo runbook
 
-## What the current demo proves
+## Honest product status
 
-- A user can speak into a browser microphone for a short turn.
-- Sarvam Saaras v4 recognises the selected source language.
-- Sarvam Translate v1 translates the recognised text.
-- Sarvam Bulbul v4 Flash generates speech in a supported target language.
-- The user can reverse the language direction using the swap control.
+The tested milestone is a mobile-friendly, turn-based speech translator:
 
-The current demo is a one-person, turn-based browser prototype. It is **not yet a live phone call** and does not connect a second participant. Do not describe it as real-time or as an ordinary cellular-call translator.
+1. The user records a short utterance in one supported language.
+2. Sarvam Saaras v4 transcribes it.
+3. Sarvam Translate v1 translates the text.
+4. Sarvam Bulbul v4 Flash generates spoken output in a supported target language.
+5. The user can reverse the language direction and repeat.
 
-## Before the demo
+Telugu → Hindi and Hindi → Telugu have been tested successfully in the installed Android app. This is not continuous simultaneous interpretation and is not yet a PSTN phone call. The intended phone-call experience is app-initiated: VaaniSetu will call the user and the recipient through a telephony provider; the recipient will not need to install VaaniSetu. That bridge is not implemented or enabled yet.
 
-1. Start the FastAPI backend from `backend` on port 8001 (or update the frontend API URL to match).
-2. Start the Vite frontend from `frontend`.
-3. Check `/health` and `/api/languages`.
-4. Confirm the backend reports live mode and a configured Sarvam key. Never display or share the key.
-5. Test Telugu → Hindi with a short, quiet utterance.
-6. Use the swap control and test Hindi → Telugu.
-7. Confirm that translated audio plays and the transcript and translation are legible.
-8. Use headphones or a quiet room; keep each utterance under 10 seconds for a smoother demo.
+## Pre-demo checklist
 
-## Suggested demo utterances
+- [ ] Open the installed VaaniSetu Android app.
+- [ ] Confirm the backend URL is `https://vaanisetu-api.onrender.com`.
+- [ ] Confirm the backend health endpoint is available: `https://vaanisetu-api.onrender.com/health`.
+- [ ] Confirm the response says `status: ok`, `mode: live`, and `sarvam_configured: true`. Never show or share API keys.
+- [ ] Grant microphone permission when Android asks.
+- [ ] Read and accept the disclosure that audio and transcript text are sent to Sarvam for processing.
+- [ ] Test Telugu → Hindi with a short, clear sentence.
+- [ ] Test Hindi → Telugu using the direction swap control.
+- [ ] Confirm the transcript, translated text, and generated speech are all correct and audible.
+- [ ] Keep each utterance short (about 5–10 seconds) and pause between turns.
+- [ ] Use a quiet room and headphones where possible. Have a mobile hotspot or backup network available.
 
-- Telugu: `నమస్కారం, మీరు ఎలా ఉన్నారు? నాకు సహాయం కావాలి.`
-- Hindi: `नमस्ते, आप कैसे हैं? मुझे स्टेशन जाने का रास्ता बताइए।`
+## Suggested test phrases
 
-Speak naturally and allow a short pause after each sentence.
+**Telugu → Hindi**
 
-## Safety and honesty
+`నమస్కారం, మీరు ఎలా ఉన్నారు? నాకు సహాయం కావాలి.`
 
-- Live-mode use requires acknowledgement that audio and transcript are sent to Sarvam AI for processing.
-- Do not claim audio is never transmitted: it is sent to Sarvam in live mode.
-- VaaniSetu does not currently persist uploaded audio to disk.
-- Do not use the prototype for emergency, medical, legal, or other high-stakes conversations.
-- Do not enable Exotel outbound calls. The ExoML call controller, public WSS deployment, and provider-approved two-leg audio flow are not complete.
-- A recipient-side phone app is not required by the intended architecture, but the PSTN bridge is still pending provider enablement and validation.
+**Hindi → Telugu**
+
+`नमस्ते, आप कैसे हैं? मुझे स्टेशन जाने का रास्ता बताइए।`
+
+Also try one unscripted phrase in each direction so the demo is not limited to memorised examples.
+
+## What to measure during testing
+
+Record at least five turns per direction:
+
+| Metric | How to record |
+|---|---|
+| Recognition | Did the transcript preserve the spoken meaning? |
+| Translation | Is the translated sentence natural and correct? |
+| Speech output | Is the voice understandable and complete? |
+| Turn latency | Seconds from pressing stop to translated audio becoming playable |
+| Reliability | Successful turns divided by total attempts |
+
+Do not invent accuracy or latency percentages. Report only measured results and note the test conditions (device, network, room noise, phrase length).
+
+## Suggested 60-second presentation
+
+"VaaniSetu aims to remove language barriers in everyday conversations across India. A Telugu speaker should be able to call a Hindi speaker, speak naturally in Telugu, and have the other person hear Hindi; replies should come back in Telugu. The recipient should not need to install an app. We have already built and tested the core Telugu–Hindi speech pipeline on Android using Sarvam speech recognition, translation, and text-to-speech. The next milestone is the telephony bridge. We are working with Exotel to confirm the account-specific two-leg calling and bidirectional audio-streaming interface before enabling real calls."
+
+## Privacy, safety and limitations
+
+- In live mode, microphone audio is sent to the VaaniSetu backend and then to Sarvam for processing. Do not claim the audio stays only on the phone.
+- The current app processes short turns; it is not continuous full-duplex interpretation. Expect a pause while transcription, translation and speech generation complete.
+- Do not use the prototype for emergency, medical, legal, financial, or other high-stakes communication.
+- Get clear consent before processing another person's speech.
+- Keep Exotel outbound calling disabled. The ExoML two-leg controller, account-specific AgentStream codec/protocol validation, public WSS deployment, and real-call tests are still pending.
+- Do not describe the current build as an ordinary cellular-call translator. The intended call flow must be initiated inside VaaniSetu.

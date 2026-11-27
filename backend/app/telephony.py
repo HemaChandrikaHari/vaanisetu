@@ -125,5 +125,6 @@ async def provider_status():
         "media_endpoint_configured": media_endpoint_configured,
         "outbound_calls_enabled": settings.enable_outbound_calls,
         "media_bridge_ready": False,
-        "note": "The WebSocket media relay is a prototype; ExoML call orchestration and public deployment are not complete. No calls should be enabled.",
+        "agentstream_protocol_verified": settings.exotel_agentstream_protocol_verified,
+        "note": "The media relay and ExoML call orchestration are not production-ready. AgentStream protocol verification is an explicit prerequisite. No calls should be enabled.",
     }

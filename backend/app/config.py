@@ -27,6 +27,7 @@ class Settings:
     exotel_exoml_base_url: str = os.getenv("EXOTEL_EXOML_BASE_URL", "https://cpaas-api.in.exotel.com").strip()
     exotel_stream_url: str = os.getenv("EXOTEL_STREAM_URL", "").strip()
     exotel_media_token: str = os.getenv("EXOTEL_MEDIA_TOKEN", "").strip()
+    exotel_agentstream_protocol_verified: bool = os.getenv("EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED", "false").strip().lower() == "true"
     exotel_status_callback_url: str = os.getenv("EXOTEL_STATUS_CALLBACK_URL", "").strip()
     enable_outbound_calls: bool = os.getenv("ENABLE_OUTBOUND_CALLS", "false").strip().lower() == "true"
     max_call_seconds: int = int(os.getenv("MAX_CALL_SECONDS", "300"))

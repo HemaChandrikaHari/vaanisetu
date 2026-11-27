@@ -67,6 +67,7 @@ class VaaniSetuApiTests(unittest.TestCase):
         body = response.json()
         self.assertFalse(body["media_bridge_ready"])
         self.assertFalse(body["outbound_calls_enabled"])
+        self.assertFalse(body["agentstream_protocol_verified"])
 
 
 if __name__ == "__main__":

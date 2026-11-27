@@ -9,7 +9,8 @@ import base64
 import io
 import json
 import logging
-import math
+import re
+import secrets
 import wave
 from dataclasses import dataclass, field
 from typing import Optional
@@ -18,6 +19,7 @@ import httpx
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.config import settings
+from app.audio_processing import AudioTurnSegmenter, SAMPLE_RATE
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["media-bridge"])
@@ -33,30 +35,11 @@ class Participant:
     role: str
     source_language: str
     target_language: str
-    audio: bytearray = field(default_factory=bytearray)
-    speech_started: bool = False
-    silence_ms: int = 0
-    speech_ms: int = 0
+    segmenter: AudioTurnSegmenter = field(default_factory=AudioTurnSegmenter)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 SESSIONS: dict[str, dict[str, Participant]] = {}
 SESSIONS_LOCK = asyncio.Lock()
-FRAME_BYTES = 320  # 20 ms of mono 8 kHz, signed 16-bit PCM
-SILENCE_RMS_THRESHOLD = 420
-END_OF_TURN_SILENCE_MS = 600
-MIN_SPEECH_MS = 300
-MAX_TURN_MS = 9000
-
-
-def _rms(pcm: bytes) -> float:
-    count = len(pcm) // 2
-    if count == 0:
-        return 0.0
-    total = 0
-    for i in range(0, count * 2, 2):
-        sample = int.from_bytes(pcm[i:i+2], "little", signed=True)
-        total += sample * sample
-    return math.sqrt(total / count)
 
 
 def _wav_8khz(pcm: bytes) -> bytes:
@@ -64,7 +47,7 @@ def _wav_8khz(pcm: bytes) -> bytes:
     with wave.open(output, "wb") as wav:
         wav.setnchannels(1)
         wav.setsampwidth(2)
-        wav.setframerate(8000)
+        wav.setframerate(SAMPLE_RATE)
         wav.writeframes(pcm)
     return output.getvalue()
 
@@ -134,7 +117,8 @@ async def _relay_turn(call_sid: str, sender: Participant, pcm: bytes) -> None:
     translated_pcm = await _translate_turn(pcm, sender.source_language, sender.target_language)
     if not translated_pcm:
         return
-    # Exotel's bidirectional AgentStream protocol accepts base64 PCM payloads.
+    # Candidate adapter payload shape only; do not enable until verified
+    # against the account-specific AgentStream documentation and live tests.
     async with peer.lock:
         for offset in range(0, len(translated_pcm), 3200):
             chunk = translated_pcm[offset:offset + 3200]
@@ -148,50 +132,41 @@ async def _relay_turn(call_sid: str, sender: Participant, pcm: bytes) -> None:
 
 async def _consume_audio(call_sid: str, participant: Participant, payload: str) -> None:
     raw = base64.b64decode(payload, validate=True)
-    # Exotel chunks can vary in size; process exact 20 ms frames.
-    participant.audio.extend(raw)
-    while len(participant.audio) >= FRAME_BYTES:
-        frame = bytes(participant.audio[:FRAME_BYTES])
-        del participant.audio[:FRAME_BYTES]
-        loud = _rms(frame) >= SILENCE_RMS_THRESHOLD
-        if loud:
-            participant.speech_started = True
-            participant.silence_ms = 0
-            participant.speech_ms += 20
-            participant._turn_buffer.extend(frame)
-        elif participant.speech_started:
-            participant.silence_ms += 20
-            participant._turn_buffer.extend(frame)
-
-        if participant.speech_started and (participant.silence_ms >= END_OF_TURN_SILENCE_MS or participant.speech_ms >= MAX_TURN_MS):
-            turn = bytes(getattr(participant, "_turn_buffer", b""))
-            participant._turn_buffer = bytearray()
-            participant.speech_started = False
-            participant.silence_ms = 0
-            valid = participant.speech_ms >= MIN_SPEECH_MS
-            participant.speech_ms = 0
-            if valid and turn:
-                try:
-                    await _relay_turn(call_sid, participant, turn)
-                except Exception:
-                    logger.exception("A media turn failed; audio was not retained")
-            break
+    # This function is only valid after a verified adapter decodes provider
+    # frames into mono 8 kHz signed 16-bit PCM.
+    completed_turns = participant.segmenter.feed(raw)
+    for turn in completed_turns:
+        try:
+            await _relay_turn(call_sid, participant, turn)
+        except Exception:
+            logger.exception("A media turn failed; audio was not retained")
 
 
 @router.websocket("/api/calls/media/{role}")
 async def exotel_media_stream(websocket: WebSocket, role: str):
     """Receive one Exotel participant stream and return translated peer audio."""
+    if not settings.exotel_agentstream_protocol_verified:
+        await websocket.close(code=1013, reason="Exotel AgentStream protocol has not been verified for this account")
+        return
     if role not in {"caller", "recipient"}:
         await websocket.close(code=1008)
         return
     token = websocket.query_params.get("token", "")
     session_id = websocket.query_params.get("session_id", "")
-    if not settings.exotel_media_token or token != settings.exotel_media_token or not (16 <= len(session_id) <= 80):
+    if (not settings.exotel_media_token
+            or not secrets.compare_digest(token, settings.exotel_media_token)
+            or not re.fullmatch(r"[A-Za-z0-9_-]{16,80}", session_id)):
         await websocket.close(code=1008)
         return
 
+    from app.languages import TTS_LANGUAGE_CODES
     source = websocket.query_params.get("source_language", "te-IN")
     target = websocket.query_params.get("target_language", "hi-IN")
+    # Both directions need speech output, so both selected languages must
+    # currently be supported by Bulbul TTS.
+    if source not in TTS_LANGUAGE_CODES or target not in TTS_LANGUAGE_CODES or source == target:
+        await websocket.close(code=1008, reason="Unsupported translation language direction")
+        return
     if role == "recipient":
         source, target = target, source
     await websocket.accept()
@@ -208,15 +183,25 @@ async def exotel_media_stream(websocket: WebSocket, role: str):
                     await websocket.close(code=1008)
                     return
                 participant = Participant(websocket, stream_sid, role, source, target)
-                participant._turn_buffer = bytearray()
                 async with SESSIONS_LOCK:
-                    SESSIONS.setdefault(session_key, {})[role] = participant
+                    existing = SESSIONS.setdefault(session_key, {})
+                    if role in existing:
+                        await websocket.close(code=1008, reason="Participant stream already exists for this session")
+                        return
+                    existing[role] = participant
             elif event == "media" and participant and session_key:
                 media = message.get("media", {})
                 payload = media.get("payload")
                 if payload:
                     await _consume_audio(session_key, participant, payload)
             elif event == "stop":
+                if participant:
+                    final_turn = participant.segmenter.flush()
+                    if final_turn:
+                        try:
+                            await _relay_turn(session_key, participant, final_turn)
+                        except Exception:
+                            logger.exception("Final media turn failed during stream shutdown")
                 break
     except WebSocketDisconnect:
         pass
