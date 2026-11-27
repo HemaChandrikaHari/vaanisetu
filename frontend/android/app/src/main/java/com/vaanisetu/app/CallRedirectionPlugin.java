@@ -1,13 +1,12 @@
 package com.vaanisetu.app;
 
-import android.app.Activity;
+import androidx.activity.result.ActivityResult;
 import android.app.role.RoleManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 
-import com.getcapacitor.ActivityResult;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
