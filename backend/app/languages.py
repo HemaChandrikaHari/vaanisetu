@@ -1,6 +1,6 @@
-"""Language capabilities exposed by the current Sarvam speech and translation APIs.
+"""Language capabilities exposed by Sarvam's current model APIs.
 
-ASR, translation, and TTS do not necessarily have identical language coverage.
+ASR, translation, and TTS do not have identical language coverage.
 """
 SUPPORTED_LANGUAGES = [
     {"code": "as-IN", "name": "Assamese"}, {"code": "bn-IN", "name": "Bengali"},
@@ -16,3 +16,14 @@ SUPPORTED_LANGUAGES = [
     {"code": "te-IN", "name": "Telugu"}, {"code": "ur-IN", "name": "Urdu"},
 ]
 LANGUAGE_CODES = {language["code"] for language in SUPPORTED_LANGUAGES}
+
+# Bulbul TTS supports a smaller set than Saaras ASR / Sarvam Translate.
+TTS_LANGUAGES = [
+    {"code": "bn-IN", "name": "Bengali"}, {"code": "en-IN", "name": "English (India)"},
+    {"code": "gu-IN", "name": "Gujarati"}, {"code": "hi-IN", "name": "Hindi"},
+    {"code": "kn-IN", "name": "Kannada"}, {"code": "ml-IN", "name": "Malayalam"},
+    {"code": "mr-IN", "name": "Marathi"}, {"code": "od-IN", "name": "Odia"},
+    {"code": "pa-IN", "name": "Punjabi"}, {"code": "ta-IN", "name": "Tamil"},
+    {"code": "te-IN", "name": "Telugu"},
+]
+TTS_LANGUAGE_CODES = {language["code"] for language in TTS_LANGUAGES}
