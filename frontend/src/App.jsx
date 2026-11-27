@@ -9,7 +9,7 @@ const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:
 const MAX_RECORDING_SECONDS = 25;
 
 async function firebaseAuthHeaders(extra = {}) {
-  const { token } = await FirebaseAuthentication.getIdToken();
+  const { token } = await FirebaseAuthentication.getIdToken({ forceRefresh: true });
   if (!token) throw new Error("Please sign in to VaaniSetu again.");
   return { ...extra, Authorization: `Bearer ${token}` };
 }
