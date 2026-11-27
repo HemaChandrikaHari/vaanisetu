@@ -10,7 +10,7 @@ The tested milestone is a mobile-friendly, turn-based speech translator:
 4. Sarvam Bulbul v4 Flash generates spoken output in a supported target language.
 5. The user can reverse the language direction and repeat.
 
-Telugu → Hindi and Hindi → Telugu have been tested successfully in the installed Android app. This is not continuous simultaneous interpretation and is not yet a PSTN phone call. The intended phone-call experience is app-initiated: VaaniSetu will call the user and the recipient through a telephony provider; the recipient will not need to install VaaniSetu. That bridge is not implemented or enabled yet.
+Telugu → Hindi and Hindi → Telugu have been tested successfully in the installed Android app. This is not continuous simultaneous interpretation and is not yet a PSTN phone call. The intended phone-call experience is to keep the user's existing Android Phone app and route selected outgoing calls through VaaniSetu. The Android 10+ call-redirection permission foundation is now implemented, including saving a preferred language direction. The current service still passes every outgoing call through unchanged; Exotel gateway routing and translated two-way call audio are not implemented or enabled yet. Android does not guarantee a universal "Call with VaaniSetu" button in every OEM dialler.
 
 ## Pre-demo checklist
 

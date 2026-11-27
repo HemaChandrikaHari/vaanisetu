@@ -9,8 +9,9 @@ VaaniSetu is a voice-first, bidirectional translation prototype for conversation
 ### Implemented
 - React + Vite frontend and Python + FastAPI backend.
 - Capacitor Android project wrapping the mobile interface, plus an installable PWA manifest and static app-shell cache.
-- Mobile Translate / Phone call navigation and a phone-call setup screen that stays disabled until Exotel is ready.
+- Mobile Translate / Phone call navigation and a phone-call setup screen for configuring language direction and Android call-redirection permission.
 - Android microphone permission declaration and configurable backend URL for installed builds.
+- Android 10+ call-redirection service registration, permission request, and native bridge for saving preferred call-language direction; outgoing calls are still passed through unchanged pending Exotel gateway verification.
 - Demo/live configuration scaffolding.
 - Browser microphone recording (up to 25 seconds per turn).
 - Server-side Sarvam Saaras v4 speech-to-text integration.
@@ -26,7 +27,7 @@ VaaniSetu is a voice-first, bidirectional translation prototype for conversation
 ### Not implemented yet
 - Two-participant conversation rooms.
 - WebRTC / continuous streaming.
-- Cellular phone-call integration.
+- Full cellular phone-call translation, including Exotel two-leg call routing and bidirectional translated audio injection.
 - Advanced noise suppression, interruption handling and live partial transcripts.
 
 ## Current end-to-end flow
@@ -134,10 +135,15 @@ AI endpoint is designed for a bot talking to one caller; VaaniSetu needs two
 human participants and separate audio directions. The intended production
 design therefore uses Exotel's ExoML programmable legs: keep each participant
 on a distinct call leg, stream each leg to its own authenticated WebSocket
-session, and inject translated audio into the opposite leg. Exotel documents
-per-leg `StartStream`, `JoinBridge`, and bidirectional AgentStream controls.
-The exact two-leg call/bridge sequence must be verified against an Exotel
-account before enabling real calls.
+session, and inject translated audio into the opposite leg. The exact two-leg
+call/bridge sequence and AgentStream controls must be verified with Exotel's
+technical team and against the account before enabling real calls.
+
+The Android app now registers `VaaniSetuCallRedirectionService` and exposes a
+native permission/status bridge. The user can save their preferred source and
+target languages in advance. This is not a universal OEM dialler menu item;
+the current service always passes outgoing calls through unchanged until the
+Exotel gateway adapter is verified and implemented.
 
 Backend scaffolding is present:
 - `GET /api/calls/provider-status` reports provider configuration without exposing credentials.
