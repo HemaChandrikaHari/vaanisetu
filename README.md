@@ -13,6 +13,8 @@ VaaniSetu is a voice-first, bidirectional translation prototype for conversation
 - Android microphone permission declaration and configurable backend URL for installed builds.
 - Android 10+ call-redirection service registration, permission request, and native bridge for saving preferred call-language direction; outgoing calls are still passed through unchanged pending Exotel gateway verification.
 - Demo/live configuration scaffolding.
+- Firebase phone-number authentication with an email/password identity linked to the same user account.
+- Firebase ID-token verification on protected speech, translation, TTS and call-initiation API routes; unauthenticated API requests are rejected.
 - Browser microphone recording (up to 25 seconds per turn).
 - Server-side Sarvam Saaras v4 speech-to-text integration.
 - Sarvam Translate v1 text translation integration.
@@ -124,7 +126,7 @@ The application does not persist uploaded audio to disk. In live mode, the audio
 
 ## Backend deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for the Render Blueprint deployment steps. The deployed API enables the existing short-turn Sarvam translation pipeline to be reached from the Android app. Keep Exotel outbound calling disabled: the production two-person PSTN media bridge is not yet implemented or verified.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the Render Blueprint deployment steps and [FIREBASE_SETUP.md](FIREBASE_SETUP.md) for Firebase phone authentication, test numbers and private Admin SDK credentials. The deployed API enables the existing short-turn Sarvam translation pipeline to be reached from the Android app. Keep Exotel outbound calling disabled: the production two-person PSTN media bridge is not yet implemented or verified.
 
 ## Phone-call integration (in progress)
 
