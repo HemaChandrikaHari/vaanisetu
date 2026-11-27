@@ -18,6 +18,7 @@ export default function AuthGate({ children }) {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
   const [mode, setMode] = useState("signup");
+  const [loginMethod, setLoginMethod] = useState("phone");
   const [step, setStep] = useState("details");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+91");
@@ -41,6 +42,27 @@ export default function AuthGate({ children }) {
     }).then((listener) => { authListener = listener; }).catch(() => {});
     return () => { active = false; authListener?.remove(); };
   }, []);
+
+  async function signInWithEmail(event) {
+    event.preventDefault();
+    setNotice("");
+    if (!/^\S+@\S+\.\S+$/.test(email.trim()) || !password) {
+      setNotice("Enter the email address and password linked to your VaaniSetu account.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await FirebaseAuthentication.signInWithEmailAndPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      setUser(result.user);
+    } catch (error) {
+      setNotice(messageFor(error));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function sendCode(event) {
     event.preventDefault();
@@ -130,13 +152,30 @@ export default function AuthGate({ children }) {
         <p className="auth-eyebrow">VOICE CONNECTS INDIA</p>
         <h1>{step === "otp" ? "Verify your number" : step === "profile" ? "Finish your account" : mode === "signup" ? "Create your account" : "Welcome back"}</h1>
         <p className="auth-subtitle">{step === "otp" ? "Enter the code sent to " + phone + "." : step === "profile" ? "Your phone number is verified. Complete your VaaniSetu profile." : "One account for your language preferences and translated calls."}</p>
-        {step === "details" && <form onSubmit={sendCode} className="auth-form">
-          <div className="auth-mode-switch"><button type="button" className={mode === "signup" ? "selected" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button type="button" className={mode === "login" ? "selected" : ""} onClick={() => { setMode("login"); setNotice(""); }}>Sign in</button></div>
-          {mode === "signup" && <><label>Full name<input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" /></label><label>Email address<input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></label><label>Password<input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" /></label></>}
-          <label>Mobile number<input type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91XXXXXXXXXX" /></label>
-          <button className="auth-primary" disabled={busy}>{busy ? "Sending code…" : "Send verification code"}</button>
-          <p className="auth-legal">We'll send an SMS verification code. Standard SMS charges may apply.</p>
-        </form>}
+        {step === "details" && <>
+          <div className="auth-mode-switch">
+            <button type="button" className={mode === "signup" ? "selected" : ""} onClick={() => { setMode("signup"); setLoginMethod("phone"); setNotice(""); }}>Create account</button>
+            <button type="button" className={mode === "login" ? "selected" : ""} onClick={() => { setMode("login"); setNotice(""); }}>Sign in</button>
+          </div>
+          {mode === "login" && <div className="auth-mode-switch">
+            <button type="button" className={loginMethod === "phone" ? "selected" : ""} onClick={() => { setLoginMethod("phone"); setNotice(""); }}>Phone number</button>
+            <button type="button" className={loginMethod === "email" ? "selected" : ""} onClick={() => { setLoginMethod("email"); setNotice(""); }}>Email</button>
+          </div>}
+          {mode === "login" && loginMethod === "email" ? (
+            <form onSubmit={signInWithEmail} className="auth-form">
+              <label>Email address<input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></label>
+              <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" /></label>
+              <button className="auth-primary" disabled={busy}>{busy ? "Signing in…" : "Sign in with email"}</button>
+            </form>
+          ) : (
+            <form onSubmit={sendCode} className="auth-form">
+              {mode === "signup" && <><label>Full name<input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" /></label><label>Email address<input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></label><label>Password<input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" /></label></>}
+              <label>Mobile number<input type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91XXXXXXXXXX" /></label>
+              <button className="auth-primary" disabled={busy}>{busy ? "Sending code…" : "Send verification code"}</button>
+              <p className="auth-legal">We'll send an SMS verification code. Standard SMS charges may apply.</p>
+            </form>
+          )}
+        </>}
         {step === "otp" && <form onSubmit={verifyCode} className="auth-form"><label>6-digit verification code<input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" /></label><button className="auth-primary" disabled={busy}>{busy ? "Verifying…" : "Verify phone number"}</button><button type="button" className="auth-secondary" onClick={() => { setStep("details"); setOtp(""); setNotice(""); }}>Change phone number</button></form>}
         {step === "profile" && <form onSubmit={finishProfile} className="auth-form"><label>Full name<input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" /></label><label>Email address<input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></label><label>Create a password<input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" /></label><button className="auth-primary" disabled={busy}>{busy ? "Saving profile…" : "Finish registration"}</button><p className="auth-legal">Your phone number is verified. We'll link your email to this same account and send an email verification link.</p></form>}
         {notice && <div className="auth-notice" role="status">{notice}</div>}
