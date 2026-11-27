@@ -76,51 +76,77 @@ async def _process_exotel_event(
     event_name: str,
     leg_sid: str,
 ) -> None:
+    """Process an Exotel lifecycle event with fail-closed two-leg cleanup."""
     async with CALL_SESSIONS_LOCK:
         session = CALL_SESSIONS.get(session_id)
-        if not session:
+        if not session or role not in session["roles"]:
             return
-        if role not in session["roles"]:
-            return
+
         if event_name == "leg_answered":
+            if not leg_sid:
+                return
             session["roles"][role]["leg_sid"] = leg_sid
+            # If the peer already failed/ended, never start a new stream.
+            start_stream = not session.get("ended", False)
         elif event_name in {"leg_terminated", "leg_failed_to_create"}:
-            other_legs = [
-                details.get("leg_sid")
-                for other_role, details in session["roles"].items()
-                if other_role != role and details.get("leg_sid")
-            ]
             session["ended"] = True
-            # If a callback arrives while POST /legs is still returning, retain
-            # the session so the creator can hang up any leg created afterward.
-            if not session.get("creating", False):
+            if session.get("creating", False):
                 session["cleanup_pending"] = True
+            start_stream = False
         else:
             return
 
+        known_legs = [
+            details.get("leg_sid")
+            for details in session["roles"].values()
+            if details.get("leg_sid")
+        ]
+        creating = session.get("creating", False)
+
     client = ExotelClient()
-    if event_name == "leg_answered":
+    if event_name == "leg_answered" and start_stream:
         stream_url = _stream_url(session_id, role, source, target)
         try:
             await client.start_stream(leg_sid, stream_url)
+            return
         except ExotelApiError:
-            # Fail closed: do not leave a silent or untranslated connected call.
-            await client.hangup_leg(leg_sid)
+            # Fail closed: stop both participants rather than leaving one
+            # connected to silence or untranslated audio.
             async with CALL_SESSIONS_LOCK:
                 current = CALL_SESSIONS.get(session_id)
                 if current:
                     current["ended"] = True
+                    current["cleanup_pending"] = current.get("creating", False)
+                    creating = current.get("creating", False)
+                    known_legs = [
+                        details.get("leg_sid")
+                        for details in current["roles"].values()
+                        if details.get("leg_sid")
+                    ]
+            for active_leg_sid in set(known_legs + [leg_sid]):
+                try:
+                    await client.hangup_leg(active_leg_sid)
+                except ExotelApiError:
+                    pass
+            if not creating:
+                async with CALL_SESSIONS_LOCK:
+                    CALL_SESSIONS.pop(session_id, None)
             raise
-        return
 
-    for other_leg_sid in other_legs:
+    # A late answer after the other leg failed must be terminated immediately.
+    if event_name == "leg_answered" and not start_stream and leg_sid:
+        known_legs = [leg_sid]
+
+    for active_leg_sid in set(known_legs):
         try:
-            await client.hangup_leg(other_leg_sid)
+            await client.hangup_leg(active_leg_sid)
         except ExotelApiError:
-            # The other leg may already have terminated.
+            # The leg may already have terminated.
             pass
-    async with CALL_SESSIONS_LOCK:
-        CALL_SESSIONS.pop(session_id, None)
+
+    if not creating:
+        async with CALL_SESSIONS_LOCK:
+            CALL_SESSIONS.pop(session_id, None)
 
 
 @router.post("/start", status_code=status.HTTP_202_ACCEPTED)
