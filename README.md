@@ -2,34 +2,33 @@
 
 **Speak your language. Let everyone understand you.**
 
-VaaniSetu is a voice-first, bidirectional translation prototype for conversations across Indian languages. The first target flow is Telugu ↔ Hindi.
+VaaniSetu is a voice-first, bidirectional translation prototype for conversations across Indian languages. The long-term target is all 22 scheduled Indian languages; the initial end-to-end pair is Telugu ↔ Hindi.
 
 ## Project status
 
-This repository contains the initial application foundation. The current milestone provides:
-- A React + Vite frontend scaffold.
-- A Python + FastAPI backend with a health endpoint.
+### Implemented
+- React + Vite frontend and Python + FastAPI backend.
 - Demo/live configuration scaffolding.
-- Environment-variable based secret handling.
+- Browser microphone recording (up to 25 seconds per turn).
+- Server-side Sarvam Saaras v4 speech-to-text integration.
+- Language selector populated from a 22-language registry.
+- Audio preview and transcript display.
+- Uploaded audio is processed in memory by this app and is not written to disk.
 
-**Speech recognition, translation, text-to-speech and two-person audio are not implemented yet.** They will be added in subsequent milestones. The app does not currently translate live speech.
+### Not implemented yet
+- Text translation.
+- Text-to-speech.
+- Two-participant conversation rooms.
+- WebRTC / continuous streaming.
+- Cellular phone-call integration.
 
 ## Architecture
 
 ```text
-Browser microphone
-      |
-      v
-React frontend  <---- HTTP / future WebSocket ---->  FastAPI backend
-                                                        |
-                                                        v
-                                                AI provider adapters
-                                                - Sarvam ASR
-                                                - Sarvam Translate
-                                                - Sarvam TTS
+Browser microphone -> React -> FastAPI -> Sarvam Saaras v4 -> transcript
 ```
 
-For the first working speech milestone, we will process short speech turns. Streaming and WebRTC will follow after the basic speech pipeline is validated.
+The first speech milestone uses short turns. Sarvam's synchronous speech-to-text REST API accepts clips up to 30 seconds; the UI caps recordings at 25 seconds. Streaming will follow after short-turn processing is validated.
 
 ## Requirements
 
@@ -39,13 +38,13 @@ For the first working speech milestone, we will process short speech turns. Stre
 
 ## Run locally
 
-### 1. Backend
+### Backend
 
 ```bash
 cd backend
 python -m venv .venv
 # Windows PowerShell:
-.venv\Scripts\Activate.ps1
+.venv\\Scripts\\Activate.ps1
 # macOS/Linux:
 # source .venv/bin/activate
 pip install -r requirements.txt
@@ -53,11 +52,13 @@ copy .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
-The backend health endpoint is available at http://localhost:8000/health and API docs at http://localhost:8000/docs.
+Health: http://localhost:8000/health  
+API docs: http://localhost:8000/docs  
+Language registry: http://localhost:8000/api/languages
 
-### 2. Frontend
+### Frontend
 
-Open a second terminal:
+In a second terminal:
 
 ```bash
 cd frontend
@@ -67,21 +68,34 @@ npm run dev
 
 Vite prints the local frontend URL (usually http://localhost:5173).
 
-## Configuration
+## Demo mode and live AI mode
 
-The backend reads its configuration from environment variables. Copy `.env.example` to `.env` inside `backend/`.
+The app starts in demo mode without credentials. In demo mode, the microphone can record and preview a short clip locally, but audio is not sent to Sarvam. No transcript is fabricated or presented as AI output.
 
-- `APP_MODE=demo` starts without provider credentials.
-- `APP_MODE=live` is reserved for real Sarvam API calls once the provider adapter is implemented.
-- `SARVAM_API_KEY` must remain on the backend and must never be exposed through a `VITE_*` variable.
+To enable real transcription, create a Sarvam API key in the Sarvam dashboard, then edit `backend/.env`:
 
-Never commit `.env`, API keys, access tokens or other secrets.
+```env
+APP_MODE=live
+SARVAM_API_KEY=your_key_here
+FRONTEND_ORIGINS=http://localhost:5173
+```
 
-## Languages
+Restart the backend after changing environment variables. The browser sends audio to the VaaniSetu backend; the backend calls Sarvam. The API key is never sent to the browser.
 
-Initial language pair:
-- Telugu (`te-IN`)
-- Hindi (`hi-IN`)
+## API endpoints
+
+- `GET /` — service status.
+- `GET /health` — backend mode and provider configuration status.
+- `GET /api/languages` — supported speech/translation language codes.
+- `POST /api/speech/transcribe?language_code=te-IN` — transcribe a short audio upload using Saaras v4.
+
+## Language capability note
+
+The language registry reflects Sarvam's current Saaras v4 speech recognition and Sarvam Translate v1 language lists. Text-to-speech has a different supported-language set; do not assume all 22 languages are available for generated voice until validated separately.
+
+## Privacy and safety
+
+The application does not persist uploaded audio to disk. In live mode, the audio clip is transmitted to Sarvam AI for transcription, subject to that provider's terms and privacy practices. Obtain clear consent before recording or processing another person's speech. Do not use this prototype for emergency or high-stakes medical communication.
 
 ## Planned milestones
 
@@ -91,10 +105,6 @@ Initial language pair:
 4. Translated speech generation.
 5. Two-participant browser conversation.
 6. Noise, accent, mixed-language and latency testing.
-
-## Privacy and safety
-
-The prototype should obtain clear consent before capturing or processing speech. Audio should not be permanently stored by default. Do not use this prototype for emergency or high-stakes medical communication.
 
 ## License
 
