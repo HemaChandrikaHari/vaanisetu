@@ -2,7 +2,7 @@
 
 **Speak your language. Let everyone understand you.**
 
-VaaniSetu is a voice-first, bidirectional translation prototype for conversations across Indian languages. The long-term target is all 22 scheduled Indian languages; the first complete voice path is Telugu → Hindi.
+VaaniSetu is a voice-first, bidirectional translation prototype for conversations across Indian languages. The long-term target is all 22 scheduled Indian languages, plus Indian English; the first complete voice path is Telugu → Hindi.
 
 ## Project status
 
@@ -13,7 +13,7 @@ VaaniSetu is a voice-first, bidirectional translation prototype for conversation
 - Server-side Sarvam Saaras v4 speech-to-text integration.
 - Sarvam Translate v1 text translation integration.
 - Sarvam Bulbul v4 Flash text-to-speech integration.
-- Language selector populated from a 22-language speech/translation registry.
+- Language selector populated from 22 scheduled Indian languages plus Indian English.
 - Separate output-language selector restricted to the current 11-language Bulbul TTS coverage.
 - Original transcript, translated text and generated audio playback.
 - Uploaded audio is processed in memory by this app and is not written to disk.
@@ -101,7 +101,7 @@ Restart the backend after changing environment variables. The browser sends audi
 
 ## Language capability note
 
-Saaras v4 speech recognition and Sarvam Translate v1 support all 22 scheduled Indian languages. Bulbul TTS currently supports 11 languages: Bengali, English (India), Gujarati, Hindi, Kannada, Malayalam, Marathi, Odia, Punjabi, Tamil and Telugu. The UI therefore allows all supported source languages but only offers currently supported TTS target languages.
+Saaras v4 speech recognition and Sarvam Translate v1 support all 22 scheduled Indian languages plus Indian English. Bulbul TTS currently supports 11 languages: Bengali, English (India), Gujarati, Hindi, Kannada, Malayalam, Marathi, Odia, Punjabi, Tamil and Telugu. The UI therefore allows all 22 scheduled Indian languages plus Indian English as source languages, but only offers currently supported TTS target languages.
 
 ## Privacy and safety
 
