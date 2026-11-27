@@ -161,6 +161,20 @@ export default function App() {
 
   const backendOnline = backend?.status === "ok";
   const liveReady = backend?.mode === "live" && backend?.sarvam_configured;
+  const canSwapLanguages = ttsLanguages.some((language) => language.code === languageCode);
+
+  function swapLanguages() {
+    if (!canSwapLanguages || recording || busy) return;
+    setLanguageCode(targetLanguageCode);
+    setTargetLanguageCode(languageCode);
+    setTranscript("");
+    setTranslatedText("");
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    if (translatedAudioUrl) URL.revokeObjectURL(translatedAudioUrl);
+    setAudioUrl("");
+    setTranslatedAudioUrl("");
+    setNotice("Direction switched. You can now translate the other way.");
+  }
 
   return (
     <main className="page-shell">
@@ -191,6 +205,9 @@ export default function App() {
           <select id="target-language" value={targetLanguageCode} onChange={(event) => setTargetLanguageCode(event.target.value)} disabled={recording || busy}>
             {ttsLanguages.map((language) => <option key={language.code} value={language.code}>{language.name} ({language.code})</option>)}
           </select>
+          <button className="swap-button" type="button" onClick={swapLanguages} disabled={!canSwapLanguages || recording || busy}>
+            ↕ Swap language direction
+          </button>
 
           <div className={`mic-orb ${recording ? "is-recording" : ""}`}><span className="mic-symbol">🎙</span></div>
           <p className="recording-caption">{recording ? `Listening… ${seconds}s / ${MAX_RECORDING_SECONDS}s` : busy ? "Processing your voice…" : "Tap below and speak naturally"}</p>
