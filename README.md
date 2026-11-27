@@ -113,9 +113,15 @@ The application does not persist uploaded audio to disk. In live mode, the audio
 
 The first PSTN provider being evaluated is Exotel India. Its Voice V1
 "Connect Two Numbers" API can call the VaaniSetu user's number first, then
-call the recipient, and bridge the two legs. It also exposes a call media
-stream URL. Exotel's AgentStream / ExoML documentation describes bidirectional
-WebSocket media and per-leg streaming controls.
+call the recipient, and bridge the two legs. However, the simple Connect Voice
+AI endpoint is designed for a bot talking to one caller; VaaniSetu needs two
+human participants and separate audio directions. The intended production
+design therefore uses Exotel's ExoML programmable legs: keep each participant
+on a distinct call leg, stream each leg to its own authenticated WebSocket
+session, and inject translated audio into the opposite leg. Exotel documents
+per-leg `StartStream`, `JoinBridge`, and bidirectional AgentStream controls.
+The exact two-leg call/bridge sequence must be verified against an Exotel
+account before enabling real calls.
 
 Backend scaffolding is present:
 - `GET /api/calls/provider-status` reports provider configuration without exposing credentials.
