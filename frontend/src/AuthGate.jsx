@@ -61,7 +61,7 @@ export default function AuthGate({ children }) {
         setBusy(false);
       });
       const completeListener = await FirebaseAuthentication.addListener("phoneVerificationCompleted", (event) => {
-        setUser(event.result.user); if (!event.result.user?.email) setMode("signup"); setStep("profile"); setBusy(false);
+        setUser(event.user); if (!event.user?.email) setMode("signup"); setStep("profile"); setBusy(false);
       });
       const failedListener = await FirebaseAuthentication.addListener("phoneVerificationFailed", (event) => {
         setNotice(messageFor(event)); setBusy(false);
