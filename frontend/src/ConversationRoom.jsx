@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
 
@@ -163,14 +162,18 @@ export default function ConversationRoom({ apiBase }) {
       const normalized = code.trim().toUpperCase();
       if (!/^[A-HJ-NP-Z2-9]{8}$/.test(normalized)) throw new Error("Enter the 8-character room code.");
       const stream = await prepareMicrophone();
-      const { token } = await FirebaseAuthentication.getIdToken({ forceRefresh: true });
-      if (!token) throw new Error("Please sign in again.");
+      const ticketResponse = await fetch(apiBase + "/api/conversation/rooms/" + encodeURIComponent(normalized) + "/ticket", {
+        method: "POST",
+        headers: await authHeaders(),
+      });
+      const ticketData = await ticketResponse.json().catch(() => ({}));
+      if (!ticketResponse.ok || !ticketData.ticket) throw new Error(ticketData.detail || "Could not authorise entry to this room.");
       setRoomCode(normalized);
       setStatus("Authenticating and joining room…");
       const socket = new WebSocket(websocketUrl(apiBase, normalized));
       socketRef.current = socket;
       socket.onopen = () => {
-        socket.send(JSON.stringify({ type: "auth", token }));
+        socket.send(JSON.stringify({ type: "auth", ticket: ticketData.ticket }));
         window.clearInterval(heartbeatRef.current);
         heartbeatRef.current = window.setInterval(() => {
           if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "heartbeat" }));

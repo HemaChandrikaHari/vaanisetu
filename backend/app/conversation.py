@@ -6,8 +6,8 @@ or receives microphone audio.
 """
 import asyncio
 import json
+import logging
 import secrets
-import string
 import time
 from typing import Any
 
@@ -19,6 +19,8 @@ from app.firebase_auth import require_firebase_user
 router = APIRouter(prefix="/api/conversation", tags=["conversation"])
 ROOM_TTL_SECONDS = 2 * 60 * 60
 MAX_SIGNAL_BYTES = 64 * 1024
+logger = logging.getLogger(__name__)
+
 ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 ROOMS: dict[str, dict[str, Any]] = {}
@@ -27,6 +29,11 @@ ROOMS_LOCK = asyncio.Lock()
 
 class CreateRoomResponse(BaseModel):
     room_code: str
+    expires_in_seconds: int
+
+
+class CreateTicketResponse(BaseModel):
+    ticket: str
     expires_in_seconds: int
 
 
@@ -51,21 +58,37 @@ async def create_room(user: dict = Depends(require_firebase_user)):
                     "created_by": user["uid"],
                     "created_at": time.time(),
                     "participants": {},
+                    "tickets": {},
                 }
                 return {"room_code": code, "expires_in_seconds": ROOM_TTL_SECONDS}
     raise HTTPException(status_code=503, detail="Could not create a conversation room. Please try again.")
 
 
-def _verify_websocket_token(token: str) -> dict:
-    if not token or len(token) > 8192:
-        raise ValueError("A valid sign-in token is required.")
-    from firebase_admin import auth
-    from app.firebase_auth import _firebase_app
-
-    decoded = auth.verify_id_token(token, app=_firebase_app(), check_revoked=True)
-    if not decoded.get("email_verified", False):
-        raise ValueError("Please verify your email before joining a conversation.")
-    return decoded
+@router.post("/rooms/{room_code}/ticket", response_model=CreateTicketResponse)
+async def issue_room_ticket(room_code: str, user: dict = Depends(require_firebase_user)):
+    code = room_code.strip().upper()
+    if len(code) != 8 or any(char not in ROOM_ALPHABET for char in code):
+        raise HTTPException(status_code=404, detail="Room not found or expired.")
+    async with ROOMS_LOCK:
+        room = ROOMS.get(code)
+        if room is None or _room_is_expired(room):
+            raise HTTPException(status_code=404, detail="Room not found or expired.")
+        uid = str(user.get("uid", ""))
+        if not uid:
+            raise HTTPException(status_code=401, detail="A valid sign-in is required.")
+        if uid in room["participants"]:
+            raise HTTPException(status_code=409, detail="This account is already in the room.")
+        if len(room["participants"]) >= 2:
+            raise HTTPException(status_code=409, detail="This room already has two participants.")
+        now = time.time()
+        for old_ticket, ticket_data in list(room["tickets"].items()):
+            if ticket_data["expires_at"] < now:
+                room["tickets"].pop(old_ticket, None)
+        if len(room["tickets"]) >= 4:
+            raise HTTPException(status_code=429, detail="Too many pending room joins. Wait a moment and try again.")
+        ticket = secrets.token_urlsafe(32)
+        room["tickets"][ticket] = {"uid": uid, "expires_at": now + 60}
+        return {"ticket": ticket, "expires_in_seconds": 60}
 
 
 async def _send_peer_event(room: dict[str, Any], sender_uid: str, message: dict) -> None:
@@ -89,27 +112,27 @@ async def conversation_signalling(websocket: WebSocket, room_code: str):
         if not isinstance(auth_message, dict) or auth_message.get("type") != "auth":
             await websocket.close(code=1008, reason="Authentication required")
             return
-        try:
-            user = await asyncio.to_thread(_verify_websocket_token, str(auth_message.get("token", "")))
-        except Exception:
-            await websocket.close(code=1008, reason="Sign-in could not be verified")
-            return
-        uid = str(user.get("uid", ""))
-        if not uid:
-            await websocket.close(code=1008, reason="Invalid account")
-            return
-
+        ticket = str(auth_message.get("ticket", ""))
         async with ROOMS_LOCK:
             room = ROOMS.get(code)
             if room is None or _room_is_expired(room):
                 await websocket.close(code=1008, reason="Room not found or expired")
                 return
+            ticket_data = room["tickets"].get(ticket)
+            if not ticket_data or ticket_data["expires_at"] < time.time():
+                room["tickets"].pop(ticket, None)
+                await websocket.close(code=1008, reason="Room ticket is invalid or expired")
+                return
+            uid = ticket_data["uid"]
             if uid in room["participants"]:
+                room["tickets"].pop(ticket, None)
                 await websocket.close(code=1008, reason="This account is already in the room")
                 return
             if len(room["participants"]) >= 2:
+                room["tickets"].pop(ticket, None)
                 await websocket.close(code=1008, reason="This room already has two participants")
                 return
+            room["tickets"].pop(ticket, None)
             role = "A" if not room["participants"] else "B"
             room["participants"][uid] = {"websocket": websocket, "role": role}
             peer_present = len(room["participants"]) == 2
@@ -153,8 +176,8 @@ async def conversation_signalling(websocket: WebSocket, room_code: str):
     except WebSocketDisconnect:
         pass
     except Exception:
-        # Do not leak authentication tokens, SDP, or microphone-related data to logs.
-        pass
+        # Log server-side diagnostics without logging tickets, SDP, or audio.
+        logger.exception("Conversation signalling failed")
     finally:
         if uid:
             async with ROOMS_LOCK:
