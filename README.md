@@ -159,8 +159,13 @@ Backend scaffolding is present:
   `EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED=true` is explicitly set after account-
   specific documentation review and live protocol tests. It is not enabled in
   the deployed environment.
-- The media WebSocket route is `/api/calls/media/{role}`. It is not yet wired
-  to ExoML leg creation, bridge membership, or public TLS hosting.
+- The media WebSocket route is `/api/calls/media/{role}`. Its internal
+  audio path now has tested adapters for Exotel-style linear16 PCM and G.711
+  mu-law at 8 kHz. The exact account-level `content_type`, event envelope,
+  outbound media envelope, and whether Exotel will accept two independent
+  streams on bridged PSTN legs still require confirmation and live tests.
+  It is not yet wired to ExoML leg creation, bridge membership, or public TLS
+  hosting.
 - Exotel credentials and the media token are read only from backend environment
   variables. No secrets belong in the frontend or Git.
 - Outbound calling remains deliberately blocked. No PSTN call can be placed

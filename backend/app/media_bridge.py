@@ -20,6 +20,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.config import settings
 from app.audio_processing import AudioTurnSegmenter, SAMPLE_RATE
+from app.exotel_audio import decode_audio, encode_audio, normalize_audio_format
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["media-bridge"])
@@ -35,6 +36,7 @@ class Participant:
     role: str
     source_language: str
     target_language: str
+    audio_format: str = "audio/x-raw"
     segmenter: AudioTurnSegmenter = field(default_factory=AudioTurnSegmenter)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
@@ -117,11 +119,13 @@ async def _relay_turn(call_sid: str, sender: Participant, pcm: bytes) -> None:
     translated_pcm = await _translate_turn(pcm, sender.source_language, sender.target_language)
     if not translated_pcm:
         return
-    # Candidate adapter payload shape only; do not enable until verified
-    # against the account-specific AgentStream documentation and live tests.
+    # The selected codec comes from the stream's start metadata. This adapter
+    # supports linear16 and G.711 mu-law, but remains behind the account-level
+    # protocol verification gate until Exotel confirms the exact content type.
+    wire_audio = encode_audio(translated_pcm, peer.audio_format)
     async with peer.lock:
-        for offset in range(0, len(translated_pcm), 3200):
-            chunk = translated_pcm[offset:offset + 3200]
+        for offset in range(0, len(wire_audio), 3200):
+            chunk = wire_audio[offset:offset + 3200]
             message = {
                 "event": "media",
                 "stream_sid": peer.stream_sid,
@@ -132,9 +136,8 @@ async def _relay_turn(call_sid: str, sender: Participant, pcm: bytes) -> None:
 
 async def _consume_audio(call_sid: str, participant: Participant, payload: str) -> None:
     raw = base64.b64decode(payload, validate=True)
-    # This function is only valid after a verified adapter decodes provider
-    # frames into mono 8 kHz signed 16-bit PCM.
-    completed_turns = participant.segmenter.feed(raw)
+    pcm = decode_audio(raw, participant.audio_format)
+    completed_turns = participant.segmenter.feed(pcm)
     for turn in completed_turns:
         try:
             await _relay_turn(call_sid, participant, turn)
@@ -182,7 +185,17 @@ async def exotel_media_stream(websocket: WebSocket, role: str):
                 if not stream_sid:
                     await websocket.close(code=1008)
                     return
-                participant = Participant(websocket, stream_sid, role, source, target)
+                media_format = message.get("start", {}).get("media_format", {})
+                encoding = media_format.get("encoding") or websocket.query_params.get("audio_format", "audio/x-raw")
+                try:
+                    audio_format = normalize_audio_format(encoding)
+                    sample_rate = int(media_format.get("sample_rate", SAMPLE_RATE))
+                    if sample_rate != SAMPLE_RATE:
+                        raise ValueError("Only 8 kHz audio is currently supported by the relay")
+                except (ValueError, TypeError):
+                    await websocket.close(code=1003, reason="Unsupported Exotel audio encoding or sample rate")
+                    return
+                participant = Participant(websocket, stream_sid, role, source, target, audio_format=audio_format)
                 async with SESSIONS_LOCK:
                     existing = SESSIONS.setdefault(session_key, {})
                     if role in existing:
