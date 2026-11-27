@@ -149,40 +149,49 @@ passes outgoing calls through unchanged until the Exotel gateway adapter is
 verified and implemented.
 
 Backend scaffolding is present:
-- `GET /api/calls/provider-status` reports provider configuration without exposing credentials.
-- `POST /api/calls/start` validates Indian E.164 numbers, language direction,
-  and explicit consent, but remains safety-blocked and places no call.
-- `backend/app/media_bridge.py` contains an isolated media-relay prototype and
-  provider-neutral PCM turn segmentation. The Exotel wire protocol, codec,
-  outbound-audio injection shape, and two-leg orchestration are not verified.
-  The WebSocket route refuses connections unless
-  `EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED=true` is explicitly set after account-
-  specific documentation review and live protocol tests. It is not enabled in
-  the deployed environment.
-- The media WebSocket route is `/api/calls/media/{role}`. Its internal
-  audio path now has tested adapters for Exotel-style linear16 PCM and G.711
-  mu-law at 8 kHz. The exact account-level `content_type`, event envelope,
-  outbound media envelope, and whether Exotel will accept two independent
-  streams on bridged PSTN legs still require confirmation and live tests.
-  It is not yet wired to ExoML leg creation, bridge membership, or public TLS
-  hosting.
-- Exotel credentials and the media token are read only from backend environment
-  variables. No secrets belong in the frontend or Git.
+- `GET /api/calls/provider-status` reports readiness gates without exposing credentials.
+- `POST /api/calls/start` validates Indian E.164 numbers, both-direction TTS
+  coverage and explicit consent. It remains safety-blocked and places no call.
+- `backend/app/exotel_client.py` implements the documented Legs API client
+  operations for creating an independent PSTN leg, starting a bidirectional
+  stream, and requesting hangup. It never logs or returns provider credentials
+  or raw provider error bodies.
+- `backend/app/telephony.py` stages a two-leg controller. Each participant is
+  dialled separately; each answered leg receives its own authenticated WSS
+  stream. The app translates each participant's speech and injects only the
+  translated audio into the other participant's stream. The original PSTN legs
+  are intentionally not joined into a conference bridge, which would leak
+  untranslated speech.
+- `POST /api/calls/exotel/events` is a feature-gated HTTPS ExoML callback
+  adapter. It acknowledges events and schedules start-stream / cleanup actions
+  in the background. It requires HTTP Basic credentials configured privately.
+- There is a material documentation conflict that must be resolved with Exotel:
+  the AgentStream Legs API guide says `leg_event_endpoint` is gRPC, while the
+  general ExoML event-endpoint guide documents an HTTPS JSON callback. The
+  callback adapter is therefore staged but disabled pending written account-
+  specific confirmation. The same applies to the exact media content type.
+- `backend/app/media_bridge.py` contains the media-relay prototype and
+  provider-neutral PCM turn segmentation. The codec adapters support linear16
+  PCM and G.711 mu-law at 8 kHz. Real AgentStream frame exchange, timing,
+  barge-in, call lifecycle, and two-way PSTN behavior still need provider-backed
+  integration tests. The WebSocket route refuses connections unless
+  `EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED=true`.
+- Exotel credentials, callback Basic credentials and media token are read only
+  from backend environment variables. No secrets belong in the frontend or Git.
 - Outbound calling remains deliberately blocked. No PSTN call can be placed
   by this build.
 
-Required backend environment variables (keep values in `backend/.env` only):
+Keep the following values in `backend/.env` / Render secrets only:
 `EXOTEL_API_KEY`, `EXOTEL_API_TOKEN`, `EXOTEL_ACCOUNT_SID`,
-`EXOTEL_CALLER_ID`, `EXOTEL_STREAM_URL`, and `EXOTEL_MEDIA_TOKEN`.
-Keep `EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED=false` until Exotel confirms the
-account-specific protocol and incoming/outgoing audio tests pass. Keep
-`ENABLE_OUTBOUND_CALLS=false` until the live media bridge, consent
-disclosure, abuse protection, and call-cost limits are ready.
-
-The critical next engineering task is to keep each participant's audio
-separate, translate each direction independently, and inject translated
-audio only into the opposite participant's call leg. A single mixed call
-recording is not sufficient for reliable bidirectional translation.
+`EXOTEL_CALLER_ID`, `EXOTEL_STREAM_URL`, `EXOTEL_STREAM_CONTENT_TYPE`,
+`EXOTEL_MEDIA_TOKEN`, `EXOTEL_LEG_EVENT_ENDPOINT_URL`,
+`EXOTEL_EVENT_AUTH_USERNAME`, and `EXOTEL_EVENT_AUTH_PASSWORD`.
+Keep `EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED=false`,
+`EXOTEL_LEG_EVENT_ENDPOINT_VERIFIED=false`, and
+`ENABLE_OUTBOUND_CALLS=false` until Exotel confirms the account-specific
+control-plane and media protocol and a complete PSTN test passes. The Render
+service also needs a durable call-session store, abuse/rate controls, explicit
+recording/translation disclosure, and a tested cost ceiling before production.
 
 ## Hackathon demo
 

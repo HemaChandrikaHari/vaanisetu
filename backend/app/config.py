@@ -26,8 +26,13 @@ class Settings:
     exotel_base_url: str = os.getenv("EXOTEL_BASE_URL", "https://api.exotel.com").strip()
     exotel_exoml_base_url: str = os.getenv("EXOTEL_EXOML_BASE_URL", "https://cpaas-api.in.exotel.com").strip()
     exotel_stream_url: str = os.getenv("EXOTEL_STREAM_URL", "").strip()
+    exotel_stream_content_type: str = os.getenv("EXOTEL_STREAM_CONTENT_TYPE", "audio/x-mulaw;rate=8000").strip()
     exotel_media_token: str = os.getenv("EXOTEL_MEDIA_TOKEN", "").strip()
     exotel_agentstream_protocol_verified: bool = os.getenv("EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED", "false").strip().lower() == "true"
+    exotel_leg_event_endpoint_url: str = os.getenv("EXOTEL_LEG_EVENT_ENDPOINT_URL", "").strip()
+    exotel_leg_event_endpoint_verified: bool = os.getenv("EXOTEL_LEG_EVENT_ENDPOINT_VERIFIED", "false").strip().lower() == "true"
+    exotel_event_auth_username: str = os.getenv("EXOTEL_EVENT_AUTH_USERNAME", "").strip()
+    exotel_event_auth_password: str = os.getenv("EXOTEL_EVENT_AUTH_PASSWORD", "").strip()
     exotel_status_callback_url: str = os.getenv("EXOTEL_STATUS_CALLBACK_URL", "").strip()
     enable_outbound_calls: bool = os.getenv("ENABLE_OUTBOUND_CALLS", "false").strip().lower() == "true"
     max_call_seconds: int = int(os.getenv("MAX_CALL_SECONDS", "300"))

@@ -21,5 +21,7 @@ services:
         value: "false"
       - key: EXOTEL_AGENTSTREAM_PROTOCOL_VERIFIED
         value: "false"
+      - key: EXOTEL_LEG_EVENT_ENDPOINT_VERIFIED
+        value: "false"
       - key: MAX_CALL_SECONDS
         value: "300"
