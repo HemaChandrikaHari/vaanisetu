@@ -44,3 +44,8 @@ select option { background: #151c30; }
 .privacy-note p { margin: 0; font-size: 11px; line-height: 1.6; }
 footer { width: min(1040px,calc(100% - 48px)); margin: 0 auto; padding: 22px 0; border-top: 1px solid rgba(255,255,255,.09); display: flex; justify-content: space-between; gap: 16px; color: #778197; font-size: 11px; }
 @media (max-width: 560px) { .topbar { width: calc(100% - 32px); height: 68px; } .hero { padding: 48px 0; } .recorder-card { padding: 19px; } footer { width: calc(100% - 32px); flex-direction: column; } }
+
+.translation-panel { margin-top: 14px; padding: 16px; border-radius: 12px; background: rgba(167,139,250,.09); border: 1px solid rgba(167,139,250,.22); }
+.translation-panel p { margin: 10px 0 0; font-size: 19px; line-height: 1.6; }
+.voice-result { margin-top: 14px; padding: 16px; border-radius: 12px; background: rgba(52,211,153,.07); border: 1px solid rgba(52,211,153,.18); }
+.voice-result audio { display: block; width: 100%; margin-top: 12px; }
