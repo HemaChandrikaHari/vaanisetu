@@ -1,0 +1,5 @@
+# Keep POSIX scripts executable and LF-terminated in Linux CI.
+*.sh text eol=lf
+frontend/android/gradlew text eol=lf
+# Keep Windows command scripts CRLF-terminated.
+*.bat text eol=crlf
