@@ -20,6 +20,7 @@ dist/
 **/.gradle/
 **/build/
 **/local.properties
+**/google-services.json
 **/captures/
 
 # Editors and OS
