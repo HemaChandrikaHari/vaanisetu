@@ -17,6 +17,8 @@ VaaniSetu is a voice-first, bidirectional translation prototype for conversation
 - Separate output-language selector restricted to the current 11-language Bulbul TTS coverage.
 - Original transcript, translated text and generated audio playback.
 - Uploaded audio is processed in memory by this app and is not written to disk.
+- Live-mode microphone capture requires an explicit acknowledgement that audio and transcript data are sent to Sarvam AI for processing.
+- Automated backend API tests for health, language coverage, consent validation, phone-number validation, and safe call blocking.
 
 ### Not implemented yet
 - Two-participant conversation rooms.
@@ -63,6 +65,13 @@ uvicorn app.main:app --reload --port 8000
 Health: http://localhost:8000/health  
 API docs: http://localhost:8000/docs  
 Language registry: http://localhost:8000/api/languages
+
+### Run backend checks
+
+```bash
+cd backend
+python -m unittest discover -s tests -v
+```
 
 ### Frontend
 
@@ -149,6 +158,12 @@ The critical next engineering task is to keep each participant's audio
 separate, translate each direction independently, and inject translated
 audio only into the opposite participant's call leg. A single mixed call
 recording is not sufficient for reliable bidirectional translation.
+
+## Hackathon demo
+
+See [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md) for startup steps, test utterances, and an accurate description of what the current prototype does and does not demonstrate.
+
+GitHub Actions runs backend API tests and a frontend production build on pushes and pull requests to `main`.
 
 ## Planned milestones
 

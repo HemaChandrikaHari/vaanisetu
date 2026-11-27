@@ -17,6 +17,7 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [translatedAudioUrl, setTranslatedAudioUrl] = useState("");
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
@@ -47,6 +48,10 @@ export default function App() {
 
   async function startRecording() {
     setNotice("");
+    if (liveReady && !privacyConsent) {
+      setNotice("Please confirm that you understand your recording and transcript will be sent to Sarvam AI for processing.");
+      return;
+    }
     setTranscript("");
     setTranslatedText("");
     if (translatedAudioUrl) URL.revokeObjectURL(translatedAudioUrl);
@@ -209,6 +214,7 @@ export default function App() {
             ↕ Swap language direction
           </button>
 
+          {liveReady && <label className="consent-row"><input type="checkbox" checked={privacyConsent} onChange={(event) => setPrivacyConsent(event.target.checked)} disabled={recording || busy} /><span>I understand my voice recording and transcript will be sent to Sarvam AI for processing. VaaniSetu does not save the audio to disk.</span></label>}
           <div className={`mic-orb ${recording ? "is-recording" : ""}`}><span className="mic-symbol">🎙</span></div>
           <p className="recording-caption">{recording ? `Listening… ${seconds}s / ${MAX_RECORDING_SECONDS}s` : busy ? "Processing your voice…" : "Tap below and speak naturally"}</p>
           {!recording ? (
