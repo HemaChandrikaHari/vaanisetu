@@ -2,10 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.languages import SUPPORTED_LANGUAGES
+from app.languages import SUPPORTED_LANGUAGES, TTS_LANGUAGES
 from app.speech import router as speech_router
+from app.translation import router as translation_router
+from app.tts import router as tts_router
 
-app = FastAPI(title="VaaniSetu API", description="Backend for multilingual Indian-language voice translation.", version="0.2.0")
+app = FastAPI(title="VaaniSetu API", description="Backend for multilingual Indian-language voice translation.", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.frontend_origins),
@@ -14,6 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(speech_router)
+app.include_router(translation_router)
+app.include_router(tts_router)
 
 @app.get("/")
 async def root():
@@ -32,11 +36,13 @@ async def health():
 async def get_languages():
     return {
         "languages": SUPPORTED_LANGUAGES,
+        "tts_languages": TTS_LANGUAGES,
         "capabilities": {
             "speech_to_text": "Sarvam Saaras v4",
             "translation": "Sarvam Translate v1",
+            "text_to_speech": "Sarvam Bulbul v4 Flash",
             "speech_to_text_languages": 22,
             "translation_languages": 22,
-            "note": "Text-to-speech coverage is tracked separately and will be added with the TTS milestone.",
+            "text_to_speech_languages": 11,
         },
     }
