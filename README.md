@@ -98,6 +98,8 @@ Restart the backend after changing environment variables. The browser sends audi
 - `POST /api/speech/transcribe?language_code=te-IN` — transcribe a short audio upload using Saaras v4.
 - `POST /api/translation/translate` — translate source text using Sarvam Translate v1.
 - `POST /api/speech/synthesize` — generate WAV speech using Bulbul v4 Flash.
+- `GET /api/calls/provider-status` — check Exotel configuration and calling readiness.
+- `POST /api/calls/start` — validated, consent-gated Exotel call request (currently safety-blocked until the media bridge is ready).
 
 ## Language capability note
 
@@ -106,6 +108,33 @@ Saaras v4 speech recognition and Sarvam Translate v1 support all 22 scheduled In
 ## Privacy and safety
 
 The application does not persist uploaded audio to disk. In live mode, the audio clip and text are transmitted to Sarvam AI for processing, subject to that provider's terms and privacy practices. Obtain clear consent before recording or processing another person's speech. Do not use this prototype for emergency or high-stakes medical communication.
+
+## Phone-call integration (in progress)
+
+The first PSTN provider being evaluated is Exotel India. Its Voice V1
+"Connect Two Numbers" API can call the VaaniSetu user's number first, then
+call the recipient, and bridge the two legs. It also exposes a call media
+stream URL. Exotel's AgentStream / ExoML documentation describes bidirectional
+WebSocket media and per-leg streaming controls.
+
+Backend scaffolding is present:
+- `GET /api/calls/provider-status` reports provider configuration without exposing credentials.
+- `POST /api/calls/start` validates Indian E.164 numbers, language direction,
+  and explicit consent before a call request.
+- Exotel credentials are read only from backend environment variables.
+- Outbound calling is deliberately blocked until the two-participant media
+  bridge is implemented and tested. No PSTN call can be placed by this build.
+
+Required backend environment variables (keep values in `backend/.env` only):
+`EXOTEL_API_KEY`, `EXOTEL_API_TOKEN`, `EXOTEL_ACCOUNT_SID`,
+`EXOTEL_CALLER_ID`, and `EXOTEL_STREAM_URL`.
+Keep `ENABLE_OUTBOUND_CALLS=false` until the live media bridge, consent
+disclosure, abuse protection, and call-cost limits are ready.
+
+The critical next engineering task is to keep each participant's audio
+separate, translate each direction independently, and inject translated
+audio only into the opposite participant's call leg. A single mixed call
+recording is not sufficient for reliable bidirectional translation.
 
 ## Planned milestones
 

@@ -6,6 +6,7 @@ from app.languages import SUPPORTED_LANGUAGES, TTS_LANGUAGES
 from app.speech import router as speech_router
 from app.translation import router as translation_router
 from app.tts import router as tts_router
+from app.telephony import router as telephony_router
 
 app = FastAPI(title="VaaniSetu API", description="Backend for multilingual Indian-language voice translation.", version="0.3.0")
 app.add_middleware(
@@ -18,6 +19,7 @@ app.add_middleware(
 app.include_router(speech_router)
 app.include_router(translation_router)
 app.include_router(tts_router)
+app.include_router(telephony_router)
 
 @app.get("/")
 async def root():
