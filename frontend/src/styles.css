@@ -122,3 +122,53 @@ footer { width: min(1040px,calc(100% - 48px)); margin: 0 auto; padding: 22px 0; 
 .account-copy small { color: #aab3c5; }
 .account-signout { padding: 8px 12px; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; background: transparent; color: #d4c9ff; font-size: 11px; font-weight: 700; }
 @media (max-width: 560px) { .auth-card { padding: 25px 21px; } .account-strip { width: calc(100% - 28px); } }
+
+/* Local conversation history */
+.history-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0; }
+.danger-button { border-color: rgba(251,113,133,.3); color: #fda4af; background: rgba(251,113,133,.07); }
+.history-empty { display: grid; justify-items: center; gap: 8px; padding: 44px 16px; text-align: center; color: #aab3c5; }
+.history-empty > span { font-size: 32px; color: #b6a4ff; }
+.history-empty strong { color: #f8fafc; }
+.history-empty p { margin: 0; font-size: 12px; }
+.history-list { display: grid; gap: 10px; }
+.history-entry { position: relative; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: rgba(255,255,255,.025); overflow: hidden; }
+.history-entry.selected { border-color: rgba(167,139,250,.45); }
+.history-entry-main { display: grid; gap: 7px; width: 100%; padding: 15px 44px 15px 15px; border: 0; background: transparent; color: #f8fafc; text-align: left; cursor: pointer; }
+.history-entry-main strong { color: #d4c9ff; font-size: 13px; }
+.history-entry-main > span:not(.history-date) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.history-entry-main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #aab3c5; font-size: 12px; }
+.history-date { color: #8792a8; font-size: 10px; }
+.history-delete { position: absolute; top: 11px; right: 12px; width: 27px; height: 27px; border: 1px solid rgba(251,113,133,.22); border-radius: 8px; background: rgba(251,113,133,.07); color: #fda4af; font-size: 19px; cursor: pointer; }
+.history-detail { padding: 14px 15px; border-top: 1px solid rgba(255,255,255,.08); background: rgba(167,139,250,.045); }
+.history-detail p { margin: 8px 0 16px; color: #f8fafc; font-size: 16px; line-height: 1.55; overflow-wrap: anywhere; }
+.history-detail p:last-child { margin-bottom: 0; }
+.history-privacy { margin: 18px 0 0; color: #8792a8; font-size: 11px; line-height: 1.6; }
+@media (max-width: 640px) {
+  .mobile-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mobile-tabs button { gap: 5px; font-size: 11px; }
+}
+
+/* Two-phone WebRTC voice room */
+.room-actions { display: grid; gap: 12px; margin-top: 18px; }
+.room-consent { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0 4px; color: #aab3c5; font-size: 11px; line-height: 1.6; }
+.room-consent input { margin-top: 3px; flex: 0 0 auto; accent-color: #a78bfa; }
+.room-divider { display: flex; align-items: center; gap: 12px; margin: 10px 0 0; color: #8792a8; font-size: 10px; letter-spacing: .14em; }
+.room-divider::before, .room-divider::after { content: ""; height: 1px; flex: 1; background: rgba(255,255,255,.12); }
+.room-code-input { text-align: center; text-transform: uppercase; letter-spacing: .2em; font-size: 19px; font-weight: 800; }
+.room-live { margin-top: 20px; }
+.room-code { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; padding: 12px 14px; border: 1px dashed rgba(167,139,250,.45); border-radius: 12px; background: rgba(167,139,250,.07); color: #e9e2ff; font: 800 25px Manrope,sans-serif; letter-spacing: .16em; }
+.room-code .swap-button { margin: 0; font: 600 12px "DM Sans",sans-serif; letter-spacing: normal; }
+.remote-audio { display: block; width: 100%; margin-top: 16px; }
+.voice-room-controls { display: grid; gap: 8px; margin-top: 14px; }
+.voice-room-controls .record-button { margin-top: 0; }
+.conversation-hero .call-status-panel { margin-top: 16px; }
+@media (min-width: 641px) {
+  .mobile-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: min(660px, calc(100% - 40px)); margin: 14px auto 0; padding: 5px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: rgba(18,24,42,.94); }
+  .mobile-tabs button { min-height: 40px; border: 0; border-radius: 9px; background: transparent; color: #aab3c5; font-weight: 600; font-size: 12px; cursor: pointer; }
+  .mobile-tabs button.active { color: #17122b; background: #b6a4ff; }
+}
+@media (max-width: 640px) {
+  .mobile-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mobile-tabs button { gap: 3px; font-size: 10px; }
+  .room-code { font-size: 21px; }
+}

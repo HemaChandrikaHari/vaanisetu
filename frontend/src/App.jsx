@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { registerPlugin } from "@capacitor/core";
 import AuthGate from "./AuthGate.jsx";
+import ConversationHistory from "./ConversationHistory.jsx";
+import ConversationRoom from "./ConversationRoom.jsx";
+import { saveHistoryEntry } from "./historyStore.js";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 
 const CallRedirection = registerPlugin("CallRedirection");
@@ -199,7 +202,17 @@ function AppContent() {
       }
       const audioBlob = await ttsResponse.blob();
       setTranslatedAudioUrl(URL.createObjectURL(audioBlob));
-      setNotice("Done · Your translated voice is ready.");
+      const sourceName = languages.find((item) => item.code === languageCode)?.name || languageCode;
+      const targetName = ttsLanguages.find((item) => item.code === targetLanguageCode)?.name || targetLanguageCode;
+      saveHistoryEntry({
+        sourceLanguage: sourceName,
+        targetLanguage: targetName,
+        sourceLanguageCode: languageCode,
+        targetLanguageCode,
+        originalText: speechData.transcript,
+        translatedText: translationData.translated_text,
+      });
+      setNotice("Done · Your translated voice is ready. This text turn was saved locally.");
     } catch (error) {
       setNotice(error.message || "The voice translation pipeline failed. Please try again.");
     } finally {
@@ -278,9 +291,11 @@ function AppContent() {
       </nav>
       <nav className="mobile-tabs" aria-label="Main navigation">
         <button type="button" className={activeTab === "translate" ? "active" : ""} onClick={() => setActiveTab("translate")}><span>◉</span> Translate</button>
+        <button type="button" className={activeTab === "history" ? "active" : ""} onClick={() => setActiveTab("history")}><span>◷</span> History</button>
+        <button type="button" className={activeTab === "conversation" ? "active" : ""} onClick={() => setActiveTab("conversation")}><span>◉</span> Voice room</button>
         <button type="button" className={activeTab === "call" ? "active" : ""} onClick={() => setActiveTab("call")}><span>☎</span> Phone call</button>
       </nav>
-      {activeTab === "translate" ? <section className="hero">
+      {activeTab === "history" ? <ConversationHistory /> : activeTab === "conversation" ? <ConversationRoom apiBase={apiBase} /> : activeTab === "translate" ? <section className="hero">
         <p className="eyebrow">VOICE-FIRST COMMUNICATION</p>
         <h1>Speak freely.<br /><span>Understand each other.</span></h1>
         <p className="intro">Speak in your language. VaaniSetu recognises your words, translates them and speaks them in another Indian language.</p>
