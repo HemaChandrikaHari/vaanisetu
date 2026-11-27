@@ -24,6 +24,7 @@ class Settings:
     exotel_account_sid: str = os.getenv("EXOTEL_ACCOUNT_SID", "").strip()
     exotel_caller_id: str = os.getenv("EXOTEL_CALLER_ID", "").strip()
     exotel_base_url: str = os.getenv("EXOTEL_BASE_URL", "https://api.exotel.com").strip()
+    exotel_exoml_base_url: str = os.getenv("EXOTEL_EXOML_BASE_URL", "https://cpaas-api.in.exotel.com").strip()
     exotel_stream_url: str = os.getenv("EXOTEL_STREAM_URL", "").strip()
     exotel_media_token: str = os.getenv("EXOTEL_MEDIA_TOKEN", "").strip()
     exotel_status_callback_url: str = os.getenv("EXOTEL_STATUS_CALLBACK_URL", "").strip()
