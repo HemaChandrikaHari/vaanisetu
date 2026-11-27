@@ -41,8 +41,9 @@ async def get_languages():
             "speech_to_text": "Sarvam Saaras v4",
             "translation": "Sarvam Translate v1",
             "text_to_speech": "Sarvam Bulbul v4 Flash",
-            "speech_to_text_languages": 22,
-            "translation_languages": 22,
+            "speech_to_text_languages": 23,
+            "translation_languages": 23,
+            "scheduled_indian_languages": 22,
             "text_to_speech_languages": 11,
         },
     }
